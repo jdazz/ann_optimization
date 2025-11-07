@@ -18,9 +18,7 @@ configs file:
     input data path
     output data path
 
-excel or json input???
-make the model more flexible (e.g. missing inputs, input type)
-change excel input to csv
+
 
 errors checks:
 
@@ -107,8 +105,10 @@ I can help you:
 Would you like to start by sharing the code, the repo structure, or the README draft first?
 
 TODO:
+
+make the model more flexible (e.g. missing inputs, input type)
+errors checks:
 check if better to take out while loop or to send an error message
-more flexibility for input
 code improvements( pas urgent:
     only one input file
     improvement: do the CV outside the epochs and not for each epoch
