@@ -1,0 +1,110 @@
+configs file:
+    global variables: 
+                    - sampler = optuna.samplers.TPESampler()??
+                    - study = optuna.create_study(sampler=sampler, direction='minimize')
+                    - r2_target = 0.99
+                    - nmae_target = 0.08
+                    - k : for kfold crossvalidation
+                    - loss_function = F.mse_loss
+
+                    - learning_rate = trial.suggest_loguniform("learning_rate", 0.0001, 0.01)
+                    - batch_size = trial.suggest_int("batch_size", 50, 150)
+                    - epochs = trial.suggest_int("epochs", 200, 200)
+                    - optimizer_name = trial.suggest_categorical("opt", ["Adam"])  # , "RMSprop", "SGD"  
+                    - mre_threshold ??              
+                    - input variables
+                    - output variables
+                    
+    input data path
+    output data path
+
+excel or json input???
+make the model more flexible (e.g. missing inputs, input type)
+change excel input to csv
+
+errors checks:
+
+requirements.txt
+
+
+That’s a great initiative — open-sourcing a project is a valuable way to contribute to the community! Let’s make sure you approach it in a structured way. Here’s a general checklist and plan to help you clean and document your code before publishing it:
+
+⸻
+
+🧹 1. Code Cleaning
+	•	Remove unused code: Delete commented-out or obsolete functions.
+	•	Check naming consistency: Use clear, descriptive names (e.g., process_data() instead of pd()).
+	•	Apply formatting:
+	•	Use an auto-formatter like Black (Python), Prettier (JavaScript), etc.
+	•	Enforce linting (e.g., flake8, eslint, pylint).
+	•	Simplify logic: Refactor overly complex functions into smaller, focused ones.
+	•	Handle secrets: Remove API keys, passwords, and tokens. Add them to a .env file and a .gitignore.
+
+⸻
+
+🗂 2. Documentation
+	•	README.md (the heart of any open-source repo):
+	•	Project overview (what it does and why it exists)
+	•	Installation and setup instructions
+	•	Usage examples
+	•	Contribution guidelines
+	•	License
+	•	Code comments: Explain why something is done (not just what).
+	•	Docstrings (if applicable): Use a consistent style like Google-style or NumPy-style docstrings.
+	•	Changelog: Summarize major updates and versions (optional but helpful).
+
+⸻
+
+🧪 3. Testing
+	•	Write or update unit tests (use pytest, unittest, etc.).
+	•	Add continuous integration (GitHub Actions, GitLab CI) to run tests automatically.
+
+⸻
+
+⚙️ 4. Repository Structure Example
+
+my_project/
+│
+├── src/                # main source code
+│   ├── __init__.py
+│   ├── module1.py
+│   └── module2.py
+│
+├── tests/              # test scripts
+│   └── test_module1.py
+│
+├── docs/               # documentation (optional)
+│   └── index.md
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+├── requirements.txt
+└── setup.py / pyproject.toml
+
+
+⸻
+
+🪪 5. License
+
+Choose a license that matches your intent:
+	•	MIT – very permissive
+	•	Apache 2.0 – permissive with patent protection
+	•	GPL v3 – requires derivatives to stay open source
+
+You can use choosealicense.com to pick one.
+
+⸻
+
+🪄 Next Step
+
+If you’d like, you can upload or paste your project’s code here (or share its structure).
+I can help you:
+	•	Clean it up systematically
+	•	Write the README.md
+	•	Add docstrings and comments
+	•	Suggest an appropriate license
+
+Would you like to start by sharing the code, the repo structure, or the README draft first?
+
+    
