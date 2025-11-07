@@ -1,0 +1,43 @@
+sampler:
+  type: "TPESampler"
+
+study:
+  direction: "minimize"
+
+targets:
+  r2_target: 0.99
+  nmae_target: 0.08
+  mre_threshold: 25   # <-- use this variable in code
+
+cross_validation:
+  kfold: 2  
+
+loss_function:
+  type: "MSELoss"
+
+hyperparameter_search_space:
+  n_samples: 25
+  learning_rate:
+    type: "loguniform"
+    low: 0.0001
+    high: 0.01
+  batch_size:
+    type: "int"
+    low: 50
+    high: 150
+  epochs:
+    type: "int"
+    low: 200
+    high: 200
+  optimizer_name:
+    type: "categorical"
+    choices:
+      - "Adam"
+      # - "RMSprop"
+      # - "SGD"
+
+data:
+  training_path: "training.json"
+  testing_path: "testing.json"
+  input_variables: []   # <-- List your feature names here
+  output_variables: []  # <-- List your target names here
