@@ -9,7 +9,7 @@ generate_plot: false
 targets:
   r2_target: 0.99
   nmae_target: 0.08
-  mre_threshold: 25   # <-- use this variable in code
+  mre_threshold: 25   
 
 cross_validation:
   kfold: 5
