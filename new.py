@@ -17,6 +17,15 @@ from sklearn.utils import resample
 import pickle
 import json
 import pandas as pd
+import matplotlib.pyplot as plt
+import math
+from src.plot import make_plot
+import os
+
+# create directory to save models
+os.makedirs("models", exist_ok=True)
+
+GENERATE_PLOTS = False
 
 
 # global variables
@@ -232,7 +241,8 @@ def crossvalidation(trial, n_input_params, n_output_params, data_train):
             raise optuna.exceptions.TrialPruned()
 
     # save the net (parameters, structure)
-    with open('{}.pickle'.format(trial.number), 'wb') as saving:
+
+    with open(os.path.join("models", f"trial_{trial.number}.pickle"), "wb") as saving:
         pickle.dump(model, saving)
     return accuracy
 
@@ -245,7 +255,9 @@ def optimization(dataset, data_train):
     study = optuna.create_study(sampler=sampler, direction='minimize')
     study.optimize(lambda trial: crossvalidation(trial, dataset.n_input_params, dataset.n_output_params, data_train),
                    n_trials=30)  # number of trials (25)
-    with open('{}.pickle'.format(study.best_trial.number), 'rb') as loading:  # load best model
+  
+    best_model_path = os.path.join("models", f"trial_{study.best_trial.number}.pickle")  # load best model
+    with open(best_model_path, "rb") as loading:
         best_model = pickle.load(loading)
 
     pruned_trials = [t for t in study.trials if t.state ==
@@ -268,151 +280,79 @@ def optimization(dataset, data_train):
         print("    {}: {}".format(key, value))
 
     print(study.best_params)
+    # cleanup intermediate trial models
+    for file in os.listdir("models"):
+        if file.startswith("trial_") and not file.endswith(f"{study.best_trial.number}.pickle"):
+            os.remove(os.path.join("models", file))
 
     return best_model
 
 
 # Test the KNN on the remaining, unseen, 20% of data
-def test(dataset, train_subset, model_name):
+def test(dataset, train_subset, model_name, save_plot_path=None):
     print('Test begins here')
-    print('converting training subset to list')
     train_subset = train_subset.tolist()
     test_data = []
-    print('Checking, if Data was used during training')
+    print('Checking if data was used during training')
     for x in dataset.full_data:
         sample = list(x)
         if sample not in train_subset:
             test_data.append(sample)
-        else:
-            pass
 
-    print('creating matrices for inputs and outputs')
-    test_data_inputs = np.zeros(
-        [len(test_data), dataset.n_input_params], dtype='float32')
-    test_data_outputs = np.zeros(
-        [len(test_data), dataset.n_output_params], dtype='float32')
+    print('Creating matrices for inputs and outputs')
+    test_data_inputs = np.zeros([len(test_data), dataset.n_input_params], dtype='float32')
+    test_data_outputs = np.zeros([len(test_data), dataset.n_output_params], dtype='float32')
     test_data = np.array(test_data)
+
     for i in range(len(test_data)):
         test_data_inputs[i] = test_data[i][range(0, dataset.n_input_params)]
-        test_data_outputs[i] = test_data[i][range(
-            dataset.n_input_params, dataset.n_input_params+dataset.n_output_params)]
+        test_data_outputs[i] = test_data[i][range(dataset.n_input_params,
+                                                  dataset.n_input_params + dataset.n_output_params)]
 
-    # convert inputs and outputs to tensors
     inputs_test_tensor = torch.from_numpy(test_data_inputs)
     outputs_test_tensor = torch.from_numpy(test_data_outputs)
-
-    # Process tensors for pytorch
-    batch_size_1 = 1
     test_data_set_1 = TensorDataset(inputs_test_tensor, outputs_test_tensor)
-    test_data_loader_1 = DataLoader(
-        test_data_set_1, batch_size_1, shuffle=False)
+    test_data_loader_1 = DataLoader(test_data_set_1, batch_size=1, shuffle=False)
 
-    mre_plot = []  # list of mean relative errors of each sample
-    y_pred_plot = []  # list of predicted output samples
-    y_true_plot = []  # list of the actual output sampels
-    sqr = []  # list of squared residuals
-    sqt = []  # list of squared totals
+    mre_plot, y_pred_plot, y_true_plot = [], [], []
+    sqr, sqt = [], []
 
-    print('loading model')
+    print('Loading model...')
     model = torch.load(model_name)
-    print('evaluating model')
     model.eval()
 
-    print('calculate errors for each prediction')
+    print('Evaluating model...')
     with torch.no_grad():
-
-        for x, y in test_data_loader_1:  # now test data set
-            y_true = y  # actual output value of test data
-            y_pred = model(x)  # predicted output value
+        for x, y in test_data_loader_1:
+            y_pred = model(x)
+            y_true = y
             tensor_rel_error = abs((y_pred - y_true) / y_true)
-            mean_rel_error = torch.sum(
-                tensor_rel_error)/tensor_rel_error.numel()
+            mean_rel_error = torch.sum(tensor_rel_error) / tensor_rel_error.numel()
 
-            # create plot array
             mre_plot.append(mean_rel_error.item() * 100)
             y_pred_plot.append(y_pred.item())
             y_true_plot.append(y_true.item())
 
-        # calculate r2-score
-        # mean of measured output data
-        y_mean = sum(y_true_plot) / len(y_true_plot)
-        for i in range(len(y_true_plot)):
-            sqr.append((y_true_plot[i] - y_pred_plot[i])**2)
-            sqt.append((y_true_plot[i] - y_mean)**2)
-        r2 = 1 - (sum(sqr) / sum(sqt))
-        print('r2:', r2)
+    # Metrics
+    y_mean = sum(y_true_plot) / len(y_true_plot)
+    sqr = [(y_true_plot[i] - y_pred_plot[i])**2 for i in range(len(y_true_plot))]
+    sqt = [(y_true_plot[i] - y_mean)**2 for i in range(len(y_true_plot))]
+    r2 = 1 - (sum(sqr) / sum(sqt))
 
-        # calculate nmae
-        delta = []
-        for i in range(len(y_true_plot)):
-            delta.append(abs(y_pred_plot[i]-y_true_plot[i]))
-        nmae = (1/len(y_true_plot))*sum(delta)/y_mean
-        print('nmae:', nmae)
+    delta = [abs(y_pred_plot[i] - y_true_plot[i]) for i in range(len(y_true_plot))]
+    nmae = (1 / len(y_true_plot)) * sum(delta) / y_mean
 
-        # calculate the number of right predictions for given threshold
-        correct = 0
-        false = 0
-        for i in range(len(y_true_plot)):
-            if mre_plot[i] <= 25:
-                correct += 1
-            else:
-                false += 1
-        test_accuracy = (correct / len(y_true_plot)) * 100
-        print("P( error<=25% )= {result}".format(result=test_accuracy))
+    correct = sum(1 for err in mre_plot if err <= 25)
+    test_accuracy = (correct / len(y_true_plot)) * 100
 
-        # plot the results
-        '''
-        loss_test_line_pos = [i * 1.30 for i in loss_test_plot_3]
-        loss_test_line_neg = [i * 0.7 for i in loss_test_plot_3]
-        if test_accuracy >= test_accuracy_value:
-            plt.figure(figsize=(12, 6))
-            font = {'family': 'serif',
-                    'color': 'darkred',
-                    'weight': 'normal',
-                    'size': 12, }
-            plt.subplot(131)
-            plt.hist(loss_test_plot_1, bins=math.ceil(max(loss_test_plot_1)))
-            plt.title('histogram relative test error in %', fontdict=font)
-            plt.xlabel('bins in 1 % error class', size=12)
-            # plt.show()
+    print(f"R²: {r2:.4f}")
+    print(f"NMAE: {nmae:.4f}")
+    print(f"P(error <= 25%): {test_accuracy:.2f}%")
 
-            plt.subplot(132)
-            plt.plot(num_epochs_1, loss_test_plot_2, 'o', color='blue', label='predictions')
-            plt.plot(num_epochs_1, loss_test_plot_3, 'o', color='red', label='labels', alpha=0.4)
-            plt.title('plot predictions and labels', fontdict=font)
-            plt.legend(loc="best", prop={'size': 8})
-            plt.xlabel('number of the sample', size=12)
-            plt.ylabel('eta electric motor', size=12)
-            # plt.show()
-            # plt.savefig('B2.png')
-            # plt.show()
-            # plt.subplot(133)
-            # plt.plot(num_epochs_1, accuracy_list,color='red')
-            # plt.title('test accuracy',fontdict=font)
-            # plt.xlabel('number of the sample',size=16)
-            # plt.ylabel('accuracy in %',size=16)
+    if GENERATE_PLOTS:
+        make_plot(mre_plot, y_pred_plot, y_true_plot, save_path=save_plot_path)
 
-            plt.subplot(133)
-            plt.plot(loss_test_plot_3, loss_test_plot_2, "o", color="blue", label='output ANN', alpha=0.4)
-            plt.plot(loss_test_plot_3, loss_test_plot_3, color='red', label='prediction = label')
-            plt.plot(loss_test_plot_3, loss_test_line_pos, '--', color='red', label='+-3% error')
-            plt.plot(loss_test_plot_3, loss_test_line_neg, '--', color='red')
-            plt.title('error plot predictions vs. labels', fontdict=font)
-            plt.legend(loc='best', prop={'size': 8})
-            plt.xlabel('labels', size=12)
-            plt.ylabel('predictions', size=12)
-
-            # plt.show()
-            # plt.figure(figsize=(6,3))
-            # plt.savefig('C:/Users/PaulScholten/Documents/UniKram/Bachelorarbeit/PythonCodeMitDokus/data_20Tr.png')
-            # plt.close('C:/Users/PaulScholten/Documents/UniKram/Bachelorarbeit/PythonCodeMitDokus/data_20Tr.png')
-            # plt.savefig(
-            #     '/pfs/work7/workspace/scratch/oc6350-conda-0/conda/NN_neue_Modelle/EM-Motor-auto-Input-varNeuronen/data_20Tr.png')
-            # plt.close(
-            #     '/pfs/work7/workspace/scratch/oc6350-conda-0/conda/NN_neue_Modelle/EM-Motor-auto-Input-varNeuronen/data_20Tr.png')
-            '''
     return test_accuracy, nmae, r2
-
 
 # Test the KNN on approx. 56600 unseen data samples
     # dataset has to be from a new excel sheet that was not used to train the network
@@ -521,11 +461,12 @@ def find_best_model(dataset, train_subset, test_set):
     best_model = optimization(dataset, train_subset)
     
     print("Saving best model...")
-    torch.save(best_model, 'ANN_best_20Trials.pt')
+    best_model_path = os.path.join("models", "ANN_best_20Trials.pt")
+    torch.save(best_model, best_model_path)
     
     print("Testing best model on unseen data...")
     error_probability_best, nmae_best, r2_best = unseen_test(
-        test_set, 'ANN_best_20Trials.pt')
+        test_set, best_model_path)
         
     print(f"Final Best NMAE: {nmae_best}")
     print(f"Final Best R2: {r2_best}")
@@ -546,9 +487,12 @@ dataset_2 = Dataset('testing.json')
 
 
 find_best_model(dataset_1, train_subset_1, dataset_2)
-test(dataset_1, train_subset_1, 'ANN_best_20Trials.pt')
 
-unseen_test(dataset_2, 'ANN_best_20Trials.pt')
 
-model = torch.load('ANN_best_20Trials.pt')
+best_model_path = os.path.join("models", "ANN_best_20Trials.pt")
+
+test(dataset_1, train_subset_1, best_model_path)
+unseen_test(dataset_2, best_model_path)
+
+model = torch.load(best_model_path)
 print(model)

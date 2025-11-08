@@ -4,6 +4,8 @@ sampler:
 study:
   direction: "minimize"
 
+generate_plot: false
+
 targets:
   r2_target: 0.99
   nmae_target: 0.08
