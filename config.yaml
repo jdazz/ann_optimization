@@ -12,7 +12,7 @@ targets:
   mre_threshold: 25   # <-- use this variable in code
 
 cross_validation:
-  kfold: 2  
+  kfold: 5
 
 loss_function:
   type: "MSELoss"
@@ -38,8 +38,26 @@ hyperparameter_search_space:
       # - "RMSprop"
       # - "SGD"
 
+network:
+  hidden_layers:
+    type: "int"
+    low: 1
+    high: 2        
+  hidden_neurons:
+    type: "int"
+    low: 4
+    high: 30         
+  activation_functions:
+    choices:
+      - "ReLU"
+      - "Sigmoid"
+      - "Tanh"
+  weight_initialization: "xavier_uniform"  # currently used in code
+  bias_initialization: "zeros"
+
 data:
-  training_path: "training.json"
-  testing_path: "testing.json"
-  input_variables: []   # <-- List your feature names here
-  output_variables: []  # <-- List your target names here
+  training_path: "data/training.json"
+  testing_path: "data/testing.json"
+  input_variables: ['distance', 'speed', 'temp_outside', 'AC', 'rain']
+  output_variables: ['consume']
+  train_ratio: 0.95
