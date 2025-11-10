@@ -113,10 +113,3 @@ class Dataset:
     def get_rows(self):
         return len(self.input_data)
 
-
-def create_subset(full_data, train_ratio=train_ratio, random_state=1):
-    """
-    Creates a random training subset from full_data.
-    """
-    sample_size = int(len(full_data) * train_ratio)
-    return resample(full_data, replace=False, n_samples=sample_size, random_state=random_state)

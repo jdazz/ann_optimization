@@ -1,63 +1,61 @@
 sampler:
-  type: "TPESampler"
-
+  type: TPESampler
 study:
-  direction: "minimize"
-
+  direction: minimize
 generate_plot: true
-
 targets:
   r2_target: 0.99
   nmae_target: 0.08
-  mre_threshold: 25   
-
+  mre_threshold: 25.0
 cross_validation:
   kfold: 5
-
 loss_function:
-  type: "MSELoss"
-
+  type: MSELoss
 hyperparameter_search_space:
-  n_samples: 10
+  n_samples: 30
   learning_rate:
-    type: "loguniform"
+    type: loguniform
     low: 0.001
     high: 0.1
   batch_size:
-    type: "int"
+    type: int
     low: 50
     high: 150
   epochs:
-    type: "int"
+    type: int
     low: 200
-    high: 200
+    high: 500
   optimizer_name:
-    type: "categorical"
+    type: categorical
     choices:
-      - "Adam"
-      # - "RMSprop"
-      # - "SGD"
-
+    - Adam
 network:
   hidden_layers:
-    type: "int"
+    type: int
     low: 2
-    high: 3       
+    high: 3
   hidden_neurons:
-    type: "int"
+    type: int
     low: 64
-    high: 128    
+    high: 128
   activation_functions:
     choices:
-      - "ReLU"
-      - "Sigmoid"
-      - "Tanh"
-  weight_initialization: "xavier_uniform" 
-  bias_initialization: "zeros"
-
+    - ReLU
+    - Sigmoid
+    - Tanh
+  weight_initialization: xavier_uniform
+  bias_initialization: zeros
 data:
-  training_path: "data/training.json"
-  testing_path: "data/testing.json"
-  input_variables: ['distance', 'speed']
-  output_variables: ['consume']
+  training_path: data/training.json
+  testing_path: data/testing.json
+  input_variables:
+  - distance
+  - speed
+  output_variables:
+  - consume
   train_ratio: 0.95
+variables:
+  input_names: 'distance
+
+    speed'
+  output_names: consume

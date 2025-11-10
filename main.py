@@ -1,17 +1,10 @@
 import os
-from src.dataset import Dataset, create_subset
-from src.train import find_best_model
-from src.model_test import test, unseen_test
-import torch
-
-os.makedirs("models", exist_ok=True)
-
-import os
 import torch
 import yaml
-from src.dataset import Dataset, create_subset
+from src.dataset import Dataset
 from src.train import find_best_model
-from src.model_test import test, unseen_test
+from src.model_test import test
+from src.model import define_net_regression
 
 # Load configuration
 config_path = os.path.join(os.getcwd(), "config.yaml")
@@ -33,24 +26,30 @@ if __name__ == "__main__":
 
     # Load training dataset
     dataset_train = Dataset(training_path)
-    train_subset = create_subset(dataset_train.full_data, train_ratio=1)
+    
 
     # Load testing dataset
     dataset_test = Dataset(testing_path)
 
     # Find the best model using the training subset
-    find_best_model(dataset_train, train_subset, dataset_test)
+    best_model, best_param = find_best_model(dataset_train)
 
     # Path to save the best model
     best_model_path = os.path.join("models", "ANN_best_model.pt")
 
 
     # Test on unseen dataset
-    test_accuracy, nmae, r2 = unseen_test(dataset_test, best_model_path)
+    test_accuracy, nmae, r2 = test(dataset_test, best_model_path, best_param)
 
-    # Print the model architecture
-    model = torch.load(best_model_path)
-    print(model)
+    model_structure = define_net_regression(
+        best_param, 
+        dataset_train.n_input_params, 
+        dataset_train.n_output_params
+    )
+    
+
+    print("\n--- Final Model Architecture and Weights ---")
+    print(model_structure)
     print("Model performance on unseen data: test_accuracy = {:.2f}%, NMAE = {:.2f}%, R2 = {:.4f}".format(
     test_accuracy, nmae, r2))
 

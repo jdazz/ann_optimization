@@ -2,83 +2,324 @@ import streamlit as st
 import os
 import torch
 import yaml
-import pandas as pd
-from src.dataset import Dataset, create_subset
+import io
+import contextlib
+import copy
+import numpy as np
+import tempfile # NEW: For creating temporary directories
+import shutil # NEW: For cleaning up temporary directories
+
+# --- Import your project's source files ---
+# This assumes 'app.py' is in the root folder, and 'src' is a subfolder.
+from src.dataset import Dataset
 from src.train import find_best_model
-from src.model_test import test, unseen_test
+from src.model_test import test
+from src.model import define_net_regression
 
-# --- Helper function to save uploaded files ---
-def save_uploaded_file(uploaded_file, save_as):
-    with open(save_as, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    return save_as
+# --- Constants ---
+CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
 
-# --- Helper function to detect file type and load data ---
-def load_dataset(file_path):
-    if file_path.endswith(".json"):
-        return Dataset(file_path)
-    elif file_path.endswith(".csv") or file_path.endswith((".xls", ".xlsx")):
-        if file_path.endswith(".csv"):
-            df = pd.read_csv(file_path)
-        else:
-            df = pd.read_excel(file_path)
-        return Dataset(df)  # Assuming Dataset class can accept a DataFrame directly
-    else:
-        raise ValueError("Unsupported file type!")
+# --- Helper Functions ---
+@st.cache_data
+def load_config(path):
+    """Loads the config file."""
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
 
-# --- Streamlit UI ---
-st.title("ANN Optimization Web App")
+def save_config(config_data, path):
+    """Saves the config data to the file."""
+    with open(path, "w") as f:
+        yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
 
-training_file = st.file_uploader("Upload Training File (.json, .csv, .xlsx)", type=["json", "csv", "xlsx"])
-testing_file = st.file_uploader("Upload Testing File (.json, .csv, .xlsx)", type=["json", "csv", "xlsx"])
-config_file = st.file_uploader("Upload config.yaml (optional)", type=["yaml", "yml"])
+# --- Session State Initialization ---
+# 'default_config' holds the original file values to allow reset
+if 'default_config' not in st.session_state:
+    st.session_state.default_config = load_config(CONFIG_PATH)
 
-if st.button("Run ANN Optimization"):
-    if training_file and testing_file:
-        st.info("Saving uploaded files...")
-        os.makedirs("models", exist_ok=True)
+if 'training_results' not in st.session_state:
+    st.session_state.training_results = None
+    
+if 'log_output' not in st.session_state:
+    st.session_state.log_output = ""
 
-        # Save uploaded training/testing files
-        training_path = save_uploaded_file(training_file, "training_file" + os.path.splitext(training_file.name)[1])
-        testing_path = save_uploaded_file(testing_file, "testing_file" + os.path.splitext(testing_file.name)[1])
+if 'uploaded_train_file' not in st.session_state:
+    st.session_state.uploaded_train_file = None
 
-        # Handle config file
-        if config_file:
-            config_path = save_uploaded_file(config_file, "config.yaml")
-            st.info("Custom config uploaded and saved.")
-        else:
-            config_path = "config.yaml"
-            if not os.path.exists(config_path):
-                st.error("No config file found! Please upload a config.yaml or place one in the current directory.")
-                st.stop()
-            st.info("Using default config.yaml from current directory.")
+if 'uploaded_test_file' not in st.session_state:
+    st.session_state.uploaded_test_file = None
 
-        # Load configuration
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-        data_config = config.get("data", {})
-        train_ratio = data_config.get("train_ratio", 0.95)
 
-        st.info("Loading datasets...")
-        dataset_train = load_dataset(training_path)
-        dataset_test = load_dataset(testing_path)
-        train_subset = create_subset(dataset_train.full_data, train_ratio=train_ratio)
+# --- Sidebar UI for Configuration ---
+st.sidebar.title("Model Configuration")
+st.sidebar.info("These values edit `config.yaml` directly. Click 'Save' to apply.")
 
-        st.info("Training and optimizing ANN...")
-        find_best_model(dataset_train, train_subset, dataset_test)
-        best_model_path = os.path.join("models", "ANN_best_model.pt")
+# Load the CURRENT config file for display
+try:
+    current_config = load_config(CONFIG_PATH)
+except FileNotFoundError:
+    st.error(f"Error: config.yaml not found at {CONFIG_PATH}")
+    st.stop()
 
-        st.info("Testing on unseen data...")
-        test_accuracy, nmae, r2 = unseen_test(dataset_test, best_model_path)
+# Use a deepcopy to create the UI form, so we don't alter the loaded dict
+ui_config = copy.deepcopy(current_config)
 
-        st.success("Optimization completed!")
-        st.write("**Best Model Performance on Unseen Data:**")
-        st.write(f"Test Accuracy: {test_accuracy:.2f}%")
-        st.write(f"NMAE: {nmae:.2f}%")
-        st.write(f"R2 Score: {r2:.4f}")
+# Initialize new sections if they don't exist in the loaded config
+if "variables" not in ui_config:
+    ui_config["variables"] = {"input_names": "Feature_1\nFeature_2", "output_names": "Target_1"}
+if "targets" not in ui_config:
+     ui_config["targets"] = {"mre_threshold": 25}
 
-        st.write("**Best Model Architecture:**")
-        model = torch.load(best_model_path)
-        st.text(str(model))
-    else:
-        st.error("Please upload both training and testing files before running.")
+# --- Create UI elements for each config section ---
+with st.sidebar.form("config_form"):
+    # Data Section (Now uses file uploaders)
+    with st.expander("Data Upload", expanded=True):
+        st.session_state.uploaded_train_file = st.file_uploader(
+            "Upload Training Data (CSV, JSON, etc.)", 
+            type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
+            key='train_uploader'
+        )
+        st.session_state.uploaded_test_file = st.file_uploader(
+            "Upload Testing Data (CSV, JSON, etc.)", 
+            type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
+            key='test_uploader'
+        )
+        # Removed text_input for paths, which are now irrelevant for UI config storage
+        # However, we must ensure the keys exist if we don't remove them globally later
+        # We will keep them for config compatibility but ignore them during training
+        # if "training_path" in ui_config["data"]: del ui_config["data"]["training_path"] 
+        # if "testing_path" in ui_config["data"]: del ui_config["data"]["testing_path"]
+
+
+    # --- Variables & Targets ---
+    with st.expander("Variables & Targets", expanded=True):
+        # Input/Feature Variables
+        var_conf = ui_config.get("variables", {})
+        
+        input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
+        ui_config["variables"]["input_names"] = st.text_area(
+            "Input/Feature Variables (One per line)",
+            input_names_str
+        )
+        
+        # Output/Target Variables
+        output_names_str = var_conf.get("output_names", "Target_1")
+        ui_config["variables"]["output_names"] = st.text_area(
+            "Output/Target Variables (One per line)",
+            output_names_str
+        )
+        
+        # MRE Threshold (from targets section)
+        targets_conf = ui_config.get("targets", {})
+        ui_config["targets"]["mre_threshold"] = st.number_input(
+            "MRE Threshold (%)", 
+            min_value=1.0, 
+            max_value=100.0,
+            value=float(targets_conf.get("mre_threshold", 25.0)),
+            step=1.0,
+            help="Maximum acceptable Mean Relative Error for a sample to be considered accurate."
+        )
+
+    # Cross Validation
+    with st.expander("Cross Validation"):
+        ui_config["cross_validation"]["kfold"] = st.number_input(
+            "K-Fold Splits", 
+            min_value=2, 
+            value=ui_config.get("cross_validation", {}).get("kfold", 5)
+        )
+    
+    # Network Architecture
+    with st.expander("Network Architecture"):
+        net_conf = ui_config.get("network", {})
+        net_conf["hidden_layers"]["low"] = st.slider(
+            "Hidden Layers (Low)", 1, 10, 
+            net_conf.get("hidden_layers", {}).get("low", 2)
+        )
+        net_conf["hidden_layers"]["high"] = st.slider(
+            "Hidden Layers (High)", 1, 10, 
+            net_conf.get("hidden_layers", {}).get("high", 2)
+        )
+        net_conf["hidden_neurons"]["low"] = st.slider(
+            "Hidden Neurons (Low)", 16, 256, 
+            net_conf.get("hidden_neurons", {}).get("low", 30)
+        )
+        net_conf["hidden_neurons"]["high"] = st.slider(
+            "Hidden Neurons (High)", 16, 256, 
+            net_conf.get("hidden_neurons", {}).get("high", 60)
+        )
+        # We must update the dictionary in place
+        ui_config["network"] = net_conf
+
+    # Hyperparameter Search
+    with st.expander("Hyperparameter Search"):
+        hpo_conf = ui_config.get("hyperparameter_search_space", {})
+        hpo_conf["n_samples"] = st.number_input(
+            "Optuna Trials (n_samples)", min_value=1, 
+            value=hpo_conf.get("n_samples", 25)
+        )
+        
+        # --- Slider for Learning Rate using exponents (log scale) ---
+        current_lr_low = np.log10(hpo_conf.get("learning_rate", {}).get("low", 0.0001))
+        current_lr_high = np.log10(hpo_conf.get("learning_rate", {}).get("high", 0.01))
+        
+        lr_exp_low, lr_exp_high = st.slider(
+            "Learning Rate Range (10^X)", 
+            min_value=-5.0, # Corresponds to 1e-5
+            max_value=-1.0, # Corresponds to 1e-1
+            value=(float(current_lr_low), float(current_lr_high)),
+            format="10^%.2f" # Display as 10 to the power of X
+        )
+        
+        # Convert the exponents back to linear values for the config dictionary
+        hpo_conf["learning_rate"]["low"] = float(10**lr_exp_low)
+        hpo_conf["learning_rate"]["high"] = float(10**lr_exp_high)
+        # --- END FIX ---
+        
+        bs_low, bs_high = st.slider(
+            "Batch Size Range", 16, 512, 
+            (hpo_conf.get("batch_size", {}).get("low", 50), hpo_conf.get("batch_size", {}).get("high", 150))
+        )
+        hpo_conf["batch_size"]["low"] = bs_low
+        hpo_conf["batch_size"]["high"] = bs_high
+        
+        # Update dictionary
+        ui_config["hyperparameter_search_space"] = hpo_conf
+
+    # --- Form Submission Buttons ---
+    col1, col2 = st.columns(2)
+    
+    submitted = col1.form_submit_button(
+        "Save configs", 
+        help="This will overwrite the config.yaml file with the values above."
+    )
+    
+    reset = col2.form_submit_button(
+        "Reset to Defaults", 
+        help="Resets config.yaml to the values it had when the app started."
+    )
+
+    if submitted:
+        try:
+            save_config(ui_config, CONFIG_PATH)
+            st.sidebar.success("Config saved! Ready to train.")
+        except Exception as e:
+            st.sidebar.error(f"Error saving config: {e}")
+            
+    if reset:
+        try:
+            save_config(st.session_state.default_config, CONFIG_PATH)
+            st.sidebar.success("Config reset to defaults.")
+            # We don't rerun, just let the user see the success
+        except Exception as e:
+            st.sidebar.error(f"Error resetting config: {e}")
+
+# --- Main App Interface ---
+st.title("ANN Model Training Dashboard")
+
+# Ensure models folder exists
+os.makedirs("models", exist_ok=True)
+best_model_path = os.path.join("models", "ANN_best_model.pt")
+
+if st.button("Start Training and Testing", type="primary"):
+    st.session_state.training_results = None
+    st.session_state.log_output = ""
+    
+    # Check for uploaded files before proceeding
+    if not st.session_state.uploaded_train_file or not st.session_state.uploaded_test_file:
+        st.error("Please upload both Training and Testing data files in the sidebar.")
+        st.stop()
+        
+    # We need to capture the print() statements from your scripts
+    log_stream = io.StringIO()
+    temp_dir = None
+    
+    with st.spinner("Running optimization and testing..."):
+        with contextlib.redirect_stdout(log_stream):
+            try:
+                print("--- Streamlit App: Starting Training ---")
+                
+                # 1. Create temporary directory to save uploaded files
+                temp_dir = tempfile.mkdtemp()
+                train_file = st.session_state.uploaded_train_file
+                test_file = st.session_state.uploaded_test_file
+                
+                # 2. Define temporary paths
+                train_path = os.path.join(temp_dir, train_file.name)
+                test_path = os.path.join(temp_dir, test_file.name)
+                
+                # 3. Write uploaded file contents to temporary paths
+                with open(train_path, "wb") as f:
+                    f.write(train_file.getbuffer())
+                with open(test_path, "wb") as f:
+                    f.write(test_file.getbuffer())
+
+
+                # 4. Load training dataset using the temporary path
+                print(f"Loading training data from temporary file: {train_path}")
+                dataset_train = Dataset(train_path)
+                
+                # 5. Load testing dataset using the temporary path
+                print(f"Loading testing data from temporary file: {test_path}")
+                dataset_test = Dataset(test_path)
+
+                # 6. Find the best model using the training subset
+                print("Starting find_best_model()...")
+                best_model, best_param = find_best_model(dataset_train) 
+                print("find_best_model() complete.")
+
+                # 7. Test on unseen dataset
+                print("Starting test()...")
+                test_accuracy, nmae, r2 = test(dataset_test, best_model_path, best_param)
+                print("test() complete.")
+
+                # 8. Get model structure for display
+                model_structure = define_net_regression(
+                    best_param, 
+                    dataset_train.n_input_params, 
+                    dataset_train.n_output_params
+                )
+                
+                # 9. Store results
+                st.session_state.training_results = {
+                    "test_accuracy": test_accuracy,
+                    "nmae": nmae,
+                    "r2": r2,
+                    "best_param": best_param,
+                    "model_structure": str(model_structure)
+                }
+                print("--- Streamlit App: Training Complete ---")
+
+            except Exception as e:
+                print(f"\n--- AN ERROR OCCURRED ---")
+                print(e)
+                st.error(f"An error occurred during training: {e}")
+                
+            finally:
+                # 10. Clean up temporary directory
+                if temp_dir and os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                    print(f"Cleaned up temporary directory: {temp_dir}")
+                
+        # Store the captured log
+        st.session_state.log_output = log_stream.getvalue()
+
+# --- Display Results ---
+if st.session_state.training_results:
+    st.success("Training and Testing Complete!")
+    
+    results = st.session_state.training_results
+    
+    st.subheader("Final Performance Metrics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Test Accuracy (MRE %)", f"{results['test_accuracy']:.2f}%")
+    col2.metric("NMAE", f"{results['nmae']:.4f}")
+    col3.metric("R² Score", f"{results['r2']:.4f}")
+    
+    with st.expander("Best Hyperparameters"):
+        st.json(results['best_param'])
+        
+    with st.expander("Final Model Architecture"):
+        st.text(results['model_structure'])
+
+if st.session_state.log_output:
+    with st.expander("Full Training Log"):
+        st.text_area("Log", st.session_state.log_output, height=400)
