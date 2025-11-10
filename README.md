@@ -58,3 +58,12 @@ The best model is saved in:
 models/ANN_best_model.pt
 ```
 
+---
+
+## Web App integration
+
+This project includes a web interface built with Streamlit that allows users to upload their training and testing datasets, as well as a configuration file, directly through a browser. The web app automates the ANN optimization process, trains the model, evaluates performance on unseen data, and displays the results including test accuracy, NMAE, R² score, and the model architecture. If no config.yaml is uploaded, the app automatically uses the default config.yaml from the project directory. This provides an accessible, user-friendly way to run the ANN optimization without needing to interact directly with the code. To lauch this web app please enter in terminal:
+
+```bash
+streamlit run app.py
+```
