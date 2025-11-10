@@ -18,7 +18,7 @@ config_path = os.path.join(os.getcwd(), "config.yaml")
 with open(config_path, "r") as f:
     config = yaml.safe_load(f)
 
-# Extract paths and settings from config
+# parameters from config
 data_config = config.get("data", {})
 training_path = data_config.get("training_path", "data/training.json")
 testing_path = data_config.get("testing_path", "data/testing.json")
@@ -48,9 +48,11 @@ if __name__ == "__main__":
     test(dataset_train, train_subset, best_model_path)
 
     # Test on unseen dataset
-    unseen_test(dataset_test, best_model_path)
+    test_accuracy, nmae, r2 = unseen_test(dataset_test, best_model_path)
 
     # Print the model architecture
     model = torch.load(best_model_path)
     print(model)
+print("Model performance on unseen data: test_accuracy = {:.2f}%, NMAE = {:.2f}%, R2 = {:.4f}".format(
+    test_accuracy, nmae, r2))
 

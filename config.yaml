@@ -18,7 +18,7 @@ loss_function:
   type: "MSELoss"
 
 hyperparameter_search_space:
-  n_samples: 25
+  n_samples: 2
   learning_rate:
     type: "loguniform"
     low: 0.0001
@@ -52,12 +52,12 @@ network:
       - "ReLU"
       - "Sigmoid"
       - "Tanh"
-  weight_initialization: "xavier_uniform"  # currently used in code
+  weight_initialization: "xavier_uniform" 
   bias_initialization: "zeros"
 
 data:
-  training_path: "data/training.json"
-  testing_path: "data/testing.json"
-  input_variables: ['distance', 'speed', 'temp_outside', 'AC', 'rain']
-  output_variables: ['consume']
+  training_path: "data/test.csv"
+  testing_path: "data/test.csv"
+  input_variables: ['Area Code', 'Months Code', 'Element Code', 'Y1961', 'Y1962']
+  output_variables: ['Y1963']
   train_ratio: 0.95
