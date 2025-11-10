@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # Load training dataset
     dataset_train = Dataset(training_path)
-    train_subset = create_subset(dataset_train.full_data, train_ratio=train_ratio)
+    train_subset = create_subset(dataset_train.full_data, train_ratio=1)
 
     # Load testing dataset
     dataset_test = Dataset(testing_path)
@@ -45,14 +45,12 @@ if __name__ == "__main__":
     best_model_path = os.path.join("models", "ANN_best_model.pt")
 
 
-    test(dataset_train, train_subset, best_model_path)
-
     # Test on unseen dataset
     test_accuracy, nmae, r2 = unseen_test(dataset_test, best_model_path)
 
     # Print the model architecture
     model = torch.load(best_model_path)
     print(model)
-print("Model performance on unseen data: test_accuracy = {:.2f}%, NMAE = {:.2f}%, R2 = {:.4f}".format(
+    print("Model performance on unseen data: test_accuracy = {:.2f}%, NMAE = {:.2f}%, R2 = {:.4f}".format(
     test_accuracy, nmae, r2))
 

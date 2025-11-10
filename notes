@@ -1,0 +1,48 @@
+
+errors checks:
+
+
+
+
+
+
+🪪 5. License
+
+Choose a license that matches your intent:
+	•	MIT – very permissive
+	•	Apache 2.0 – permissive with patent protection
+	•	GPL v3 – requires derivatives to stay open source
+
+You can use choosealicense.com to pick one.
+
+
+TODO:
+
+
+errors checks:
+check if better to take out while loop or to send an error message
+code improvements( pas urgent:
+    only one input file
+    improvement: do the CV outside the epochs and not for each epoch
+    remove redundant test function
+    augmenter range nombre de neurone par layer
+    A Better, Simpler Approach:
+
+Remove the create_subset line:
+
+Python
+
+# print("Sampling 95% as a subset for training")
+# train_subset_1 = create_subset(dataset_1.full_data)
+Pass the full training dataset to your optimization function:
+
+Python
+
+find_best_model(dataset_1, dataset_1.full_data, dataset_2) 
+Delete the test() call at the end. It's redundant.
+
+Python
+
+# test(dataset_1, train_subset_1, 'ANN_best_20Trials.pt') 
+Your code will be cleaner, and you'll let your optimization function use 100% of the training.json data to find the best model, which is more effective.)
+

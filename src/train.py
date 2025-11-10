@@ -56,7 +56,6 @@ def data_crossvalidation(n_input_params, n_output_params, train, validate, batch
     return train_data_loader, validation_data_loader, output_validate
 
 
-# === Crossvalidation ===
 def crossvalidation(trial, n_input_params, n_output_params, data_train):
     print("Creating net")
     model = define_net_regression(trial, n_input_params, n_output_params).to(Device)
@@ -110,7 +109,6 @@ def crossvalidation(trial, n_input_params, n_output_params, data_train):
     return accuracy
 
 
-# === Optimization ===
 def optimization(dataset, data_train):
     sampler_type = config.get("sampler", {}).get("type", "TPESampler")
     study_direction = config.get("study", {}).get("direction", "minimize")
@@ -135,7 +133,6 @@ def optimization(dataset, data_train):
     return best_model
 
 
-# === Find best model ===
 def find_best_model(dataset, train_subset, test_set):
     print("Running optimization...")
     best_model = optimization(dataset, train_subset)
@@ -144,9 +141,4 @@ def find_best_model(dataset, train_subset, test_set):
     best_model_path = os.path.join("models", "ANN_best_model.pt")
     torch.save(best_model, best_model_path)
 
-    print("Testing best model on unseen data...")
-    error_prob, nmae, r2 = unseen_test(test_set, best_model_path)
 
-    print(f"Final Best NMAE: {nmae}")
-    print(f"Final Best R2: {r2}")
-    print(f"Final Best P(error<={mre_threshold}%): {error_prob}")

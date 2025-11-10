@@ -71,9 +71,9 @@ def test(dataset, train_subset, model_name, save_plot_path=None):
     print(f"R²: {r2:.4f}")
     print(f"NMAE: {nmae:.4f}")
     print(f"P(error <= {MRE_THRESHOLD}%): {test_accuracy:.2f}%")
+    #if GENERATE_PLOTS:
+    #  make_plot(mre_list, y_pred_list, y_true_list, save_path=PLOT_SAVE_PATH)
 
-    if GENERATE_PLOTS:
-        make_plot(mre_list, y_pred_list, y_true_list, save_path=save_plot_path or PLOT_SAVE_PATH)
 
     return test_accuracy, nmae, r2
 
@@ -124,6 +124,6 @@ def unseen_test(dataset, model_name):
     print(f"P(error <= {MRE_THRESHOLD}%) on unseen data: {test_accuracy:.2f}%")
 
     if GENERATE_PLOTS:
-        make_plot(mre_list, y_pred_list, y_true_list, save_path=PLOT_SAVE_PATH)
+       make_plot(mre_list, y_pred_list, y_true_list, save_path=PLOT_SAVE_PATH)
 
     return test_accuracy, nmae, r2
