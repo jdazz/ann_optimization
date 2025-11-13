@@ -12,7 +12,7 @@ cross_validation:
 loss_function:
   type: MSELoss
 hyperparameter_search_space:
-  n_samples: 30
+  n_samples: 10
   learning_rate:
     type: loguniform
     low: 0.001
@@ -46,8 +46,8 @@ network:
   weight_initialization: xavier_uniform
   bias_initialization: zeros
 data:
-  training_path: data/training.json
-  testing_path: data/testing.json
+  training_path: data/training_filtered.parquet
+  testing_path: data/training_filtered.parquet
   input_variables:
   - distance
   - speed

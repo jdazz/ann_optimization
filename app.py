@@ -213,7 +213,7 @@ with st.sidebar.form("config_form"):
             st.sidebar.error(f"Error resetting config: {e}")
 
 # --- Main App Interface ---
-st.title("ANN Model Training Dashboard")
+st.title("ANN Optimization Dashboard")
 
 # Ensure models folder exists
 os.makedirs("models", exist_ok=True)
@@ -323,3 +323,21 @@ if st.session_state.training_results:
 if st.session_state.log_output:
     with st.expander("Full Training Log"):
         st.text_area("Log", st.session_state.log_output, height=400)
+
+st.markdown(
+    """
+    <style>
+    .footer {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        font-size: 12px;
+        color: #555; /* Dark gray */
+    }
+    </style>
+    <div class="footer">
+        This program was developped by the Institute for Dynamic Systems and Control at ETHZ
+    </div>
+    """,
+    unsafe_allow_html=True
+)

@@ -31,8 +31,8 @@ input_variables: ['feature1', 'feature2', 'feature3']
 output_variables: ['target']
 ```
 
-> ATTENTION: Accepted data types: JSON (.json), CSV (.csv), Excel (.xls/.xlsx), Parquet (.parquet), Pandas DataFrame or numpy.ndarray.
-> Data must have no missing values. Depending on the dataset size, this program may take a long time to run.
+> ATTENTION: Accepted data types: JSON (.json), CSV (.csv), Excel (.xls/.xlsx) and Parquet (.parquet).
+> Data must have no missing values.
 ---
 
 ## Run the Program
@@ -67,3 +67,9 @@ This project includes a web interface built with Streamlit that allows users to 
 ```bash
 streamlit run app.py
 ```
+
+---
+
+## Acknowledgements
+
+This program was developped at the Institute for Dynamic Systems and Control at ETHZ, ???
