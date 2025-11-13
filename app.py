@@ -8,6 +8,7 @@ import copy
 import numpy as np
 import tempfile # NEW: For creating temporary directories
 import shutil # NEW: For cleaning up temporary directories
+import matplotlib.pyplot as plt
 
 # --- Import your project's source files ---
 # This assumes 'app.py' is in the root folder, and 'src' is a subfolder.
@@ -15,6 +16,7 @@ from src.dataset import Dataset
 from src.train import find_best_model
 from src.model_test import test
 from src.model import define_net_regression
+from src.plot import make_plot
 
 # --- Constants ---
 CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
@@ -52,7 +54,7 @@ if 'uploaded_test_file' not in st.session_state:
 # --- Sidebar UI for Configuration ---
 st.sidebar.title("Model Configuration")
 st.sidebar.info("Please upload your training and testing data files here and enter the right features and target. Adjust the model parameters as needed, then click 'Save configs' to apply changes before training.")
-
+st.set_option('deprecation.showPyplotGlobalUse', False)
 # Load the CURRENT config file for display
 try:
     current_config = load_config(CONFIG_PATH)
@@ -170,7 +172,7 @@ with st.sidebar.form("config_form"):
         hpo_conf["n_samples"] = st.number_input(
             "Optuna Trials (n_samples)", 
             min_value=1, 
-            value=hpo_conf.get("n_samples", 25)
+            value=hpo_conf.get("n_samples", 50)
         )
 
         # --- Learning Rate (log-scale range slider) ---
@@ -221,6 +223,14 @@ with st.sidebar.form("config_form"):
 
         # --- Update dictionary ---
         ui_config["hyperparameter_search_space"] = hpo_conf
+        # Display Options
+    
+    ui_config["display"] = ui_config.get("display", {})
+    ui_config["display"]["show_plot"] = st.checkbox(
+        "Show Prediction Plot After Training",
+        value=ui_config["display"].get("show_plot", True),
+        help="If checked, a plot comparing predictions and true values will be shown after training."
+    )
 
     # --- Form Submission Buttons ---
     col1, col2 = st.columns(2)
@@ -306,24 +316,31 @@ if st.button("Start Training and Testing", type="primary"):
 
                 # 7. Test on unseen dataset
                 print("Starting test()...")
-                test_accuracy, nmae, r2 = test(dataset_test, best_model_path, best_param)
+                test_accuracy, nmae, r2, mre_list, y_pred, y_true = test(dataset_test, best_model_path, best_param)
                 print("test() complete.")
-
-                # 8. Get model structure for display
-                model_structure = define_net_regression(
-                    best_param, 
-                    dataset_train.n_input_params, 
-                    dataset_train.n_output_params
-                )
                 
-                # 9. Store results
                 st.session_state.training_results = {
                     "test_accuracy": test_accuracy,
                     "nmae": nmae,
                     "r2": r2,
                     "best_param": best_param,
-                    "model_structure": str(model_structure)
+                    "model_structure": str(define_net_regression(
+                        best_param, 
+                        dataset_train.n_input_params, 
+                        dataset_train.n_output_params
+                    )),
+                    "y_true": y_true,
+                    "y_pred": y_pred,
+                    "mre_list": mre_list
                 }
+
+                # 8. Get model structure for display and store results
+                model_structure = define_net_regression(
+                    best_param, 
+                    dataset_train.n_input_params, 
+                    dataset_train.n_output_params
+                )
+                st.session_state.training_results["model_structure"] = str(model_structure)
                 print("--- Streamlit App: Training Complete ---")
                 
 
@@ -346,6 +363,10 @@ if st.session_state.training_results:
     st.success("Training and Testing Complete!")
     
     results = st.session_state.training_results
+   
+    
+    
+
         # --- Download Best Model Button ---
     model_path = os.path.join("models", "ANN_best_model.pt")
     if os.path.exists(model_path):
@@ -365,6 +386,20 @@ if st.session_state.training_results:
     col1.metric("Test Accuracy (MRE %)", f"{results['test_accuracy']:.2f}%")
     col2.metric("NMAE", f"{results['nmae']:.4f}")
     col3.metric("R² Score", f"{results['r2']:.4f}")
+
+        # --- Display Results Plot (only if enabled) ---
+    
+    with st.expander("Prediction Plot", expanded=False):
+            if ui_config.get("display", {}).get("show_plot", True):
+                fig = make_plot(
+                    results['mre_list'], 
+                    results['y_pred'], 
+                    results['y_true'], 
+                    save_path=None  
+                )
+                st.pyplot(fig)
+            else:
+                st.info("Plot display is disabled in the configuration.")
     
     with st.expander("Best Hyperparameters"):
         st.json(results['best_param'])

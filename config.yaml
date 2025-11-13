@@ -54,3 +54,5 @@ variables:
 
     speed'
   output_names: consume
+display:
+  show_plot: false

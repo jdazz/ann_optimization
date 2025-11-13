@@ -116,4 +116,4 @@ def test(dataset, model_path, best_params):
        # Assuming make_plot handles the lists of errors and predictions/true values
        make_plot(mre_list, y_pred_list, y_true_list, save_path=PLOT_SAVE_PATH)
 
-    return test_accuracy, nmae, r2
+    return test_accuracy, nmae, r2, mre_list, y_pred_list, y_true_list
