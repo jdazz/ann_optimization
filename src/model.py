@@ -3,10 +3,8 @@ import torch.nn as nn
 import yaml
 import os
 import optuna
-# Assuming nn.BatchNorm1d is correct for your data shape.
-# If your input data is 2D (batch_size, features), BatchNorm1d is typically correct.
 
-# Load config.yaml
+# Load configs
 config_path = os.path.join(os.getcwd(), "config.yaml")
 try:
     with open(config_path, "r") as f:
@@ -31,9 +29,9 @@ def define_net_regression(params_or_trial, n_input_params, n_output_params):
     
     # Determine the input type
     is_trial = isinstance(params_or_trial, optuna.trial.Trial)
-    source = params_or_trial # Either the Trial object or the parameters dict
+    source = params_or_trial 
 
-    # --- 1. Get Number of Hidden Layers ---
+    #  Get Number of Hidden Layers 
     hl_low = network_config.get("hidden_layers", {}).get("low", 2)
     hl_high = network_config.get("hidden_layers", {}).get("high", 2)
     
@@ -47,7 +45,7 @@ def define_net_regression(params_or_trial, n_input_params, n_output_params):
         
     print(f"Model Definition - Hidden Layers: {hidden_layers}")
 
-    # --- 2. Build Hidden Layers ---
+    # Build Hidden Layers
     for i in range(hidden_layers):
         
         # Hidden neurons
@@ -80,33 +78,30 @@ def define_net_regression(params_or_trial, n_input_params, n_output_params):
 
         x_in = hidden_neurons
 
-    # --- 3. Output Layer ---
+    # Output Layer
     layers.append(nn.Linear(x_in, n_output_params))
     net = nn.Sequential(*layers)
     
 
-    # --- 4. Initialize Weights and Biases ---
+    # Initialize Weights and Biases 
     weight_init = network_config.get("weight_initialization", "xavier_uniform")
     bias_init = network_config.get("bias_initialization", "zeros")
 
     for m in net:
         if isinstance(m, nn.Linear):
-            # Weight initialization
             if weight_init == "xavier_uniform":
                 nn.init.xavier_uniform_(m.weight)
             elif weight_init == "xavier_normal":
                 nn.init.xavier_normal_(m.weight)
             elif weight_init == "kaiming_uniform":
-                # Kaiming is often preferred for ReLU activations
                 nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
-            # Add more schemes if needed
 
-            # Bias initialization
+
+
             if m.bias is not None:
                 if bias_init == "zeros":
                     nn.init.zeros_(m.bias)
                 elif bias_init == "ones":
                     nn.init.ones_(m.bias)
-                # Add more schemes if needed
 
     return net

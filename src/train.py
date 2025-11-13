@@ -42,7 +42,7 @@ def data_crossvalidation(n_input_params, n_output_params, train, validate, batch
     input_validate = np.array([row[:n_input_params] for row in validate], dtype='float32')
     output_validate = np.array([row[n_input_params:n_input_params+n_output_params] for row in validate], dtype='float32')
 
-    # Convert to Tensors
+ 
     input_train = torch.from_numpy(input_train).to(Device)
     output_train = torch.from_numpy(output_train).to(Device)
     input_validate = torch.from_numpy(input_validate).to(Device)
@@ -61,8 +61,7 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
     """
     print(f"\nTrial {trial.number}: ", end="")
     
-    # --- 1. Define Model and Hyperparameters ---
-    # Model template is defined *once* per trial using suggested params
+    #  Define Model and Hyperparameters 
     try:
         model_template = define_net_regression(trial, n_input_params, n_output_params).to(Device)
     except Exception as e:
@@ -82,16 +81,15 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
     
     data_train = dataset.full_data
     
-    # KFold object is created *once* per trial
+
     kfold = KFold(n_splits=kfold_splits, shuffle=True, random_state=42)
     fold_losses = []
     global_step = 0
 
-    # --- 2. K-Fold Loop (OUTER loop) ---
+    # K-Fold Loop
     
     for fold_idx, (train_idx, validate_idx) in enumerate(kfold.split(data_train)):
         
-        # --- 2a. Reset model and optimizer for each fold ---
         fold_model = copy.deepcopy(model_template).to(Device)
         optimizer = getattr(torch.optim, optimizer_name)(fold_model.parameters(), lr=learning_rate)
 
@@ -104,7 +102,6 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
         
         last_epoch_val_loss = 0.0
 
-        # --- 3. Epoch Loop (INNER loop) ---
         for epoch in range(epochs):
             fold_model.train()
             for x, y in train_loader:
@@ -130,22 +127,32 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
         
-        # Store the final validation loss for this fold
+
         fold_losses.append(last_epoch_val_loss)
 
-    # --- 4. Final Metric ---
-    # The trial's value is the average of the final validation loss from all folds
+  
+    # compute average of the final validation loss from all folds
     avg_loss = np.mean(fold_losses)
     print(f"Avg Loss: {avg_loss:.6f}")
 
-    # --- 5. Return Metric ---
-    # NO MODEL SAVING HERE
+
     return avg_loss
 
 
 def optimization(dataset):
     """
-    REWRITTEN: Runs HPO and returns the BEST HYPERPARAMETERS.
+    Perform hyperparameter optimization (HPO) using Optuna to find the best model parameters and returns the best paremeters.
+
+
+    Args:
+        dataset (Dataset): A custom Dataset object 
+
+    Returns:
+        best_params (dict): Dictionary of the hyperparameters that yielded the best performance
+            during the optimization process.
+        best_value (float): The corresponding value of the objective function (e.g., average loss)
+            for the best trial.
+
     """
     sampler_type = config.get("sampler", {}).get("type", "TPESampler")
     study_direction = config.get("study", {}).get("direction", "minimize")
@@ -164,19 +171,16 @@ def optimization(dataset):
     print(f"  Best value (avg loss): {study.best_value:.6f}")
     print(f"  Best parameters: {study.best_params}")
 
-    # --- NO MODEL LOADING OR CLEANUP ---
-    
     # Return the dictionary of best parameters
     return study.best_params, study.best_value
 
 
 def train_final_model(model, data_train, best_params, n_input_params, n_output_params):
     """
-    NEW: Helper function to train the final model on the full dataset.
+    Helper function to train the final model on the full dataset.
     """
     print(f"Retraining final model on full dataset ({len(data_train)} samples)...")
     
-    # 1. Create full dataset loader
     input_train = np.array([row[:n_input_params] for row in data_train], dtype='float32')
     output_train = np.array([row[n_input_params:n_input_params+n_output_params] for row in data_train], dtype='float32')
     
@@ -185,7 +189,7 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     
     full_dataset = TensorDataset(input_train_tensor, output_train_tensor)
     
-    # 2. Get training settings from best_params
+    # Get training settings from best_params
     batch_size = best_params['batch_size']
     learning_rate = best_params['learning_rate']
     optimizer_name = best_params['opt']
@@ -194,7 +198,7 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     train_loader = DataLoader(full_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
 
-    # 3. Training Loop
+    # Training Loop
     model.train()
     for epoch in range(epochs):
         epoch_loss = 0
@@ -206,9 +210,7 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
             optimizer.step()
             epoch_loss += loss.item() * x.size(0)
         
-        # Optional: print training progress
-        # if (epoch + 1) % 20 == 0:
-        #     print(f"  Final training epoch {epoch+1}/{epochs}, Loss: {epoch_loss / len(data_train):.6f}")
+        
 
     print("Final model retraining complete.")
     return model
@@ -216,25 +218,25 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
 
 def find_best_model(dataset):
     """
-    REWRITTEN: Main function to orchestrate the entire pipeline.
+    Main function to orchestrate the entire pipeline.
     
     1. Runs HPO to find best params.
     2. Retrains a new model on the full dataset with those params.
     3. Saves and returns the final model.
     """
-    # --- 1. Run Hyperparameter Optimization ---
+    # Run Hyperparameter Optimization ---
     best_params, best_cv_loss = optimization(dataset)
 
-    # --- 2. Create and Retrain Final Model ---
+    # Create and Retrain Final Model ---
     print("\n--- Creating Final Model ---")
-    # Create the final model using the best_params dictionary
+
     final_model = define_net_regression(
         best_params, 
         dataset.n_input_params, 
         dataset.n_output_params
     ).to(Device)
 
-    # Train this model on the *entire* dataset.full_data
+    # Train this model on the entire dataset.full_data
     final_model = train_final_model(
         final_model,
         dataset.full_data,
@@ -243,18 +245,13 @@ def find_best_model(dataset):
         dataset.n_output_params
     )
     
-    # --- 3. Save Final Model ---
+
     os.makedirs("models", exist_ok=True)
     best_model_path = os.path.join("models", "ANN_best_model.pt")
     
-    # Save the model's STATE (weights), not the whole object
+
     torch.save(final_model.state_dict(), best_model_path)
     print(f"Final best model's weights saved to: {best_model_path}")
-
-    # --- 4. Test Final Model (Optional but recommended) ---
-    print("\n--- Testing Final Model on Unseen Data ---")
-    # 'unseen_test' must also be adapted to use 'best_params' to build the model
-
     
     return final_model, best_params
 

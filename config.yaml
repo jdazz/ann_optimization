@@ -2,7 +2,7 @@ sampler:
   type: TPESampler
 study:
   direction: minimize
-generate_plot: true
+generate_plot: false
 targets:
   r2_target: 0.99
   nmae_target: 0.08
@@ -41,8 +41,8 @@ network:
   weight_initialization: xavier_uniform
   bias_initialization: zeros
 data:
-  training_path: data/training_filtered.parquet
-  testing_path: data/training_filtered.parquet
+  training_path: data/training.parquet
+  testing_path: data/training.parquet
   input_variables:
   - distance
   - speed

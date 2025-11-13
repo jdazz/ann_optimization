@@ -6,22 +6,19 @@ import io
 import contextlib
 import copy
 import numpy as np
-import tempfile # NEW: For creating temporary directories
-import shutil # NEW: For cleaning up temporary directories
+import tempfile 
+import shutil 
 import matplotlib.pyplot as plt
 
-# --- Import your project's source files ---
-# This assumes 'app.py' is in the root folder, and 'src' is a subfolder.
 from src.dataset import Dataset
 from src.train import find_best_model
 from src.model_test import test
 from src.model import define_net_regression
 from src.plot import make_plot
 
-# --- Constants ---
+# --- CONFIGS ---
 CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
 
-# --- Helper Functions ---
 @st.cache_data
 def load_config(path):
     """Loads the config file."""
@@ -34,7 +31,7 @@ def save_config(config_data, path):
         yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
 
 # --- Session State Initialization ---
-# 'default_config' holds the original file values to allow reset
+
 if 'default_config' not in st.session_state:
     st.session_state.default_config = load_config(CONFIG_PATH)
 
@@ -85,11 +82,6 @@ with st.sidebar.form("config_form"):
             type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
             key='test_uploader'
         )
-        # Removed text_input for paths, which are now irrelevant for UI config storage
-        # However, we must ensure the keys exist if we don't remove them globally later
-        # We will keep them for config compatibility but ignore them during training
-        # if "training_path" in ui_config["data"]: del ui_config["data"]["training_path"] 
-        # if "testing_path" in ui_config["data"]: del ui_config["data"]["testing_path"]
 
 
     # --- Variables & Targets ---
@@ -133,7 +125,7 @@ with st.sidebar.form("config_form"):
     with st.expander("Network Architecture"):
         net_conf = ui_config.get("network", {})
 
-    # --- Hidden Layers (range slider) ---
+    # Hidden Layers
         hidden_layers_low = net_conf.get("hidden_layers", {}).get("low", 2)
         hidden_layers_high = net_conf.get("hidden_layers", {}).get("high", 4)
         hidden_layers_range = st.slider(
@@ -148,7 +140,7 @@ with st.sidebar.form("config_form"):
             "high": hidden_layers_range[1]
         }
 
-    # --- Hidden Neurons (range slider) ---
+    # Hidden Neurons 
         hidden_neurons_low = net_conf.get("hidden_neurons", {}).get("low", 30)
         hidden_neurons_high = net_conf.get("hidden_neurons", {}).get("high", 60)
         hidden_neurons_range = st.slider(
@@ -163,7 +155,6 @@ with st.sidebar.form("config_form"):
             "high": hidden_neurons_range[1]
         }
 
-    # Update config dictionary
         ui_config["network"] = net_conf
 
     # Hyperparameter Search
@@ -175,7 +166,7 @@ with st.sidebar.form("config_form"):
             value=hpo_conf.get("n_samples", 50)
         )
 
-        # --- Learning Rate (log-scale range slider) ---
+        # --- Learning Rate (log scale slider) ---
         current_lr_low = np.log10(hpo_conf.get("learning_rate", {}).get("low", 0.0001))
         current_lr_high = np.log10(hpo_conf.get("learning_rate", {}).get("high", 0.01))
 
@@ -221,10 +212,10 @@ with st.sidebar.form("config_form"):
         )
         hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
 
-        # --- Update dictionary ---
+
         ui_config["hyperparameter_search_space"] = hpo_conf
-        # Display Options
-    
+
+    #--- Plot Options ---
     ui_config["display"] = ui_config.get("display", {})
     ui_config["display"]["show_plot"] = st.checkbox(
         "Show Prediction Plot After Training",
@@ -276,7 +267,6 @@ if st.button("Start Training and Testing", type="primary"):
         st.error("Please upload both Training and Testing data files in the sidebar.")
         st.stop()
         
-    # We need to capture the print() statements from your scripts
     log_stream = io.StringIO()
     temp_dir = None
     
@@ -285,36 +275,32 @@ if st.button("Start Training and Testing", type="primary"):
             try:
                 print("--- Streamlit App: Starting Training ---")
                 
-                # 1. Create temporary directory to save uploaded files
                 temp_dir = tempfile.mkdtemp()
                 train_file = st.session_state.uploaded_train_file
                 test_file = st.session_state.uploaded_test_file
                 
-                # 2. Define temporary paths
                 train_path = os.path.join(temp_dir, train_file.name)
                 test_path = os.path.join(temp_dir, test_file.name)
                 
-                # 3. Write uploaded file contents to temporary paths
                 with open(train_path, "wb") as f:
                     f.write(train_file.getbuffer())
                 with open(test_path, "wb") as f:
                     f.write(test_file.getbuffer())
 
 
-                # 4. Load training dataset using the temporary path
+                # Load dataset using the temporary path
                 print(f"Loading training data from temporary file: {train_path}")
                 dataset_train = Dataset(train_path)
                 
-                # 5. Load testing dataset using the temporary path
                 print(f"Loading testing data from temporary file: {test_path}")
                 dataset_test = Dataset(test_path)
 
-                # 6. Find the best model using the training subset
+                # Find the best model using the training subset
                 print("Starting find_best_model()...")
                 best_model, best_param = find_best_model(dataset_train) 
                 print("find_best_model() complete.")
 
-                # 7. Test on unseen dataset
+                # Test on unseen dataset
                 print("Starting test()...")
                 test_accuracy, nmae, r2, mre_list, y_pred, y_true = test(dataset_test, best_model_path, best_param)
                 print("test() complete.")
@@ -334,7 +320,7 @@ if st.button("Start Training and Testing", type="primary"):
                     "mre_list": mre_list
                 }
 
-                # 8. Get model structure for display and store results
+                # Get model structure for display and store results
                 model_structure = define_net_regression(
                     best_param, 
                     dataset_train.n_input_params, 
@@ -350,7 +336,6 @@ if st.button("Start Training and Testing", type="primary"):
                 st.error(f"An error occurred during training: {e}")
                 
             finally:
-                # 10. Clean up temporary directory
                 if temp_dir and os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
                     print(f"Cleaned up temporary directory: {temp_dir}")
@@ -363,9 +348,6 @@ if st.session_state.training_results:
     st.success("Training and Testing Complete!")
     
     results = st.session_state.training_results
-   
-    
-    
 
         # --- Download Best Model Button ---
     model_path = os.path.join("models", "ANN_best_model.pt")
@@ -411,6 +393,8 @@ if st.session_state.log_output:
     with st.expander("Full Training Log"):
         st.text_area("Log", st.session_state.log_output, height=400)
 
+
+# --- Acknowledgements ---
 st.markdown(
     """
     <style>

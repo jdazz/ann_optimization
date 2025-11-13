@@ -21,14 +21,14 @@ def make_plot(mre_plot, y_pred_plot, y_true_plot, save_path=None):
     plt.figure(figsize=(15, 5))
     font = {'family': 'serif', 'color': 'darkred', 'size': 12}
 
-    # 1️⃣ Histogram of relative errors
+    # Histogram of relative errors
     plt.subplot(131)
     plt.hist(mre_plot, bins=math.ceil(max(mre_plot)))
     plt.title('Histogram of Relative Test Error (%)', fontdict=font)
     plt.xlabel('Error (%)')
     plt.ylabel('Count')
 
-    # 2️⃣ Predictions vs. True Labels (sample index)
+    # Predictions vs. True Labels (sample index)
     plt.subplot(132)
     plt.plot(range(len(y_true_plot)), y_pred_plot, 'o', color='blue', label='Predictions')
     plt.plot(range(len(y_true_plot)), y_true_plot, 'o', color='red', alpha=0.5, label='Labels')
@@ -37,7 +37,7 @@ def make_plot(mre_plot, y_pred_plot, y_true_plot, save_path=None):
     plt.ylabel('Output Value')
     plt.legend()
 
-    # 3️⃣ Scatter plot of Predictions vs. Labels (Error visualization)
+    # Scatter plot of Predictions vs. Labels (Error visualization)
     plt.subplot(133)
     plt.plot(y_true_plot, y_pred_plot, 'o', color='blue', alpha=0.5, label='Predictions')
     plt.plot(y_true_plot, y_true_plot, color='red', label='Perfect Prediction (y=x)')

@@ -27,7 +27,7 @@ class Dataset:
         - Pandas DataFrame or numpy.ndarray
         """
         self.name = None
-        self.dataset = None  # Initialize dataset
+        self.dataset = None 
 
         # --- Load from DataFrame ---
         if isinstance(source, pd.DataFrame):
@@ -48,17 +48,13 @@ class Dataset:
                 with open(source, "r") as f:
                     data = json.load(f)
 
-                # Case 1: list of dicts
                 if isinstance(data, list) and all(isinstance(d, dict) for d in data):
                     df = pd.DataFrame(data)
 
-                # Case 2: dict of lists
                 elif isinstance(data, dict):
                     df = pd.DataFrame(data)
 
-                # Case 3: list of lists
                 elif isinstance(data, list) and all(isinstance(d, list) for d in data):
-                    # Create temporary column names
                     num_cols = len(data[0])
                     temp_cols = [f"col_{i}" for i in range(num_cols)]
                     df = pd.DataFrame(data, columns=temp_cols)
