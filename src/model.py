@@ -4,16 +4,7 @@ import yaml
 import os
 import optuna
 
-# Load configs
-config_path = os.path.join(os.getcwd(), "config.yaml")
-try:
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-except FileNotFoundError:
-    print(f"Error: config.yaml not found at {config_path}")
-    config = {}
 
-network_config = config.get("network", {})
 
 def define_net_regression(params_or_trial, n_input_params, n_output_params):
     """
@@ -23,6 +14,17 @@ def define_net_regression(params_or_trial, n_input_params, n_output_params):
     1. An Optuna Trial object (during hyperparameter search).
     2. A dictionary of fixed best parameters (during final model creation).
     """
+
+    # Load configs
+    config_path = os.path.join(os.getcwd(), "config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"Error: config.yaml not found at {config_path}")
+        config = {}
+
+    network_config = config.get("network", {})
 
     layers = []
     x_in = n_input_params

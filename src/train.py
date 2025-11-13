@@ -8,40 +8,19 @@ import os
 from src.model import define_net_regression
 import yaml
 import copy
-from .model_test import test
-
-config_path = os.path.join(os.getcwd(), "config.yaml")
-with open(config_path, "r") as f:
-    config = yaml.safe_load(f)
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# get parameters from config
-kfold_splits = config.get("cross_validation", {}).get("kfold", 5)
-loss_fn_name = config.get("loss_function", {}).get("type", "MSELoss")
-if hasattr(F, loss_fn_name.lower()):
-    loss_function = getattr(F, loss_fn_name.lower())
-else:
-    loss_function = F.mse_loss
-
-hyperparams_config = config.get("hyperparameter_search_space", {})
-learning_rate_config = hyperparams_config.get("learning_rate", {})
-batch_size_config = hyperparams_config.get("batch_size", {})
-epochs_config = hyperparams_config.get("epochs", {})
-optimizer_config = hyperparams_config.get("optimizer_name", {})
-
-
-
-
 def data_crossvalidation(n_input_params, n_output_params, train, validate, batch_size):
-    """Helper to create DataLoaders (Unchanged)"""
+    """
+    Helper to create DataLoaders (Unchanged logic, just accepts batch_size).
+    """
     input_train = np.array([row[:n_input_params] for row in train], dtype='float32')
     output_train = np.array([row[n_input_params:n_input_params+n_output_params] for row in train], dtype='float32')
     input_validate = np.array([row[:n_input_params] for row in validate], dtype='float32')
     output_validate = np.array([row[n_input_params:n_input_params+n_output_params] for row in validate], dtype='float32')
-
  
     input_train = torch.from_numpy(input_train).to(Device)
     output_train = torch.from_numpy(output_train).to(Device)
@@ -54,14 +33,35 @@ def data_crossvalidation(n_input_params, n_output_params, train, validate, batch
     return train_data_loader, validation_data_loader, output_validate
 
 
-def crossvalidation(trial, n_input_params, n_output_params, dataset):
+def get_loss_function(config):
+    """Determines the loss function based on config."""
+    loss_fn_name = config.get("loss_function", {}).get("type", "MSELoss")
+    if hasattr(F, loss_fn_name.lower()):
+        return getattr(F, loss_fn_name.lower())
+    else:
+        print(f"Warning: Loss function '{loss_fn_name}' not found. Defaulting to MSELoss.")
+        return F.mse_loss
+
+
+def crossvalidation(trial, n_input_params, n_output_params, dataset, config):
     """
     REWRITTEN: Optuna objective function.
     Performs K-Fold CV and returns the average validation loss.
+    Now explicitly takes the config dictionary.
     """
     print(f"\nTrial {trial.number}: ", end="")
+
+    # Parse parameters from config
+    kfold_splits = config.get("cross_validation", {}).get("kfold", 5)
+    loss_function = get_loss_function(config)
     
-    #  Define Model and Hyperparameters 
+    hyperparams_config = config.get("hyperparameter_search_space", {})
+    learning_rate_config = hyperparams_config.get("learning_rate", {})
+    batch_size_config = hyperparams_config.get("batch_size", {})
+    epochs_config = hyperparams_config.get("epochs", {})
+    optimizer_config = hyperparams_config.get("optimizer_name", {})
+    
+    # Define Model and Hyperparameters using Optuna trial suggestions
     try:
         model_template = define_net_regression(trial, n_input_params, n_output_params).to(Device)
     except Exception as e:
@@ -81,13 +81,11 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
     
     data_train = dataset.full_data
     
-
     kfold = KFold(n_splits=kfold_splits, shuffle=True, random_state=42)
     fold_losses = []
     global_step = 0
 
     # K-Fold Loop
-    
     for fold_idx, (train_idx, validate_idx) in enumerate(kfold.split(data_train)):
         
         fold_model = copy.deepcopy(model_template).to(Device)
@@ -130,30 +128,20 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset):
 
         fold_losses.append(last_epoch_val_loss)
 
-  
     # compute average of the final validation loss from all folds
     avg_loss = np.mean(fold_losses)
     print(f"Avg Loss: {avg_loss:.6f}")
 
-
     return avg_loss
 
 
-def optimization(dataset):
+def optimization(dataset, config):
     """
-    Perform hyperparameter optimization (HPO) using Optuna to find the best model parameters and returns the best paremeters.
-
-
-    Args:
-        dataset (Dataset): A custom Dataset object 
-
-    Returns:
-        best_params (dict): Dictionary of the hyperparameters that yielded the best performance
-            during the optimization process.
-        best_value (float): The corresponding value of the objective function (e.g., average loss)
-            for the best trial.
-
+    Perform hyperparameter optimization (HPO) using Optuna.
+    Now explicitly takes the config dictionary.
     """
+    hyperparams_config = config.get("hyperparameter_search_space", {})
+    
     sampler_type = config.get("sampler", {}).get("type", "TPESampler")
     study_direction = config.get("study", {}).get("direction", "minimize")
 
@@ -161,8 +149,9 @@ def optimization(dataset):
     study = optuna.create_study(sampler=sampler, direction=study_direction)
     
     print("Starting Optuna Hyperparameter Optimization...")
+    # Pass config into the objective function
     study.optimize(
-        lambda trial: crossvalidation(trial, dataset.n_input_params, dataset.n_output_params, dataset),
+        lambda trial: crossvalidation(trial, dataset.n_input_params, dataset.n_output_params, dataset, config),
         n_trials=hyperparams_config.get("n_samples", 25)
     )
 
@@ -175,9 +164,10 @@ def optimization(dataset):
     return study.best_params, study.best_value
 
 
-def train_final_model(model, data_train, best_params, n_input_params, n_output_params):
+def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config):
     """
     Helper function to train the final model on the full dataset.
+    Now explicitly takes the config dictionary to get the loss function.
     """
     print(f"Retraining final model on full dataset ({len(data_train)} samples)...")
     
@@ -195,6 +185,9 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     optimizer_name = best_params['opt']
     epochs = best_params['epochs']
     
+    # Get loss function from the config
+    loss_function = get_loss_function(config)
+
     train_loader = DataLoader(full_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
 
@@ -220,38 +213,43 @@ def find_best_model(dataset):
     """
     Main function to orchestrate the entire pipeline.
     
-    1. Runs HPO to find best params.
-    2. Retrains a new model on the full dataset with those params.
-    3. Saves and returns the final model.
+    1. Loads config.
+    2. Runs HPO to find best params.
+    3. Retrains a new model on the full dataset with those params.
+    4. Saves and returns the final model and best parameters.
     """
-    # Run Hyperparameter Optimization ---
-    best_params, best_cv_loss = optimization(dataset)
+    # Load config internally
+    config_path = os.path.join(os.getcwd(), "config.yaml")
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+        
+    # Run Hyperparameter Optimization
+    best_params, best_cv_loss = optimization(dataset, config)
 
-    # Create and Retrain Final Model ---
     print("\n--- Creating Final Model ---")
 
+    # Pass best_params and config to define_net_regression
     final_model = define_net_regression(
         best_params, 
         dataset.n_input_params, 
-        dataset.n_output_params
+        dataset.n_output_params,
     ).to(Device)
 
-    # Train this model on the entire dataset.full_data
     final_model = train_final_model(
         final_model,
         dataset.full_data,
         best_params,
         dataset.n_input_params,
-        dataset.n_output_params
+        dataset.n_output_params,
+        config 
     )
     
+
 
     os.makedirs("models", exist_ok=True)
     best_model_path = os.path.join("models", "ANN_best_model.pt")
     
-
     torch.save(final_model.state_dict(), best_model_path)
     print(f"Final best model's weights saved to: {best_model_path}")
     
     return final_model, best_params
-

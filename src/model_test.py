@@ -16,10 +16,11 @@ except FileNotFoundError:
     config = {}
 
 GENERATE_PLOTS = config.get('generate_plot', False)
-Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MRE_THRESHOLD = config.get('targets', {}).get('mre_threshold', 25)
 TEST_BATCH_SIZE = config.get('testing', {}).get('batch_size', 1)
 PLOT_SAVE_PATH = config.get('plots_save_path', None)
+
+Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 

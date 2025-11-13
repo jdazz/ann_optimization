@@ -16,10 +16,9 @@ from src.model_test import test
 from src.model import define_net_regression
 from src.plot import make_plot
 
-# --- CONFIGS ---
 CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
 
-@st.cache_data
+#@st.cache_data
 def load_config(path):
     """Loads the config file."""
     with open(path, "r") as f:
@@ -46,6 +45,12 @@ if 'uploaded_train_file' not in st.session_state:
 
 if 'uploaded_test_file' not in st.session_state:
     st.session_state.uploaded_test_file = None
+
+try:
+    current_config = load_config(CONFIG_PATH) 
+except FileNotFoundError:
+    st.error(f"Error: config.yaml not found at {CONFIG_PATH}")
+    st.stop()
 
 
 # --- Sidebar UI for Configuration ---

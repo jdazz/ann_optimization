@@ -5,15 +5,6 @@ import numpy as np
 from sklearn.utils import resample
 import yaml
 
-# Load configuration
-config_path = os.path.join(os.getcwd(), "config.yaml")
-with open(config_path, "r") as f:
-    config = yaml.safe_load(f)
-
-data_config = config.get("data", {})
-input_vars = data_config.get("input_variables", [])
-output_vars = data_config.get("output_variables", [])
-train_ratio = data_config.get("train_ratio", 0.95)
 
 
 class Dataset:
@@ -26,6 +17,15 @@ class Dataset:
         - Parquet (.parquet)
         - Pandas DataFrame or numpy.ndarray
         """
+        # Load configuration
+        config_path = os.path.join(os.getcwd(), "config.yaml")
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+
+        data_config = config.get("data", {})
+        input_vars = data_config.get("input_variables", [])
+        output_vars = data_config.get("output_variables", [])
+        train_ratio = data_config.get("train_ratio", 0.95)
         self.name = None
         self.dataset = None 
 

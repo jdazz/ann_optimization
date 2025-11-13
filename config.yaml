@@ -14,14 +14,14 @@ loss_function:
 hyperparameter_search_space:
   n_samples: 10
   learning_rate:
-    low: 0.001
+    low: 0.01
     high: 0.1
   batch_size:
-    low: 50
-    high: 150
+    low: 16
+    high: 50
   epochs:
-    low: 200
-    high: 500
+    low: 350
+    high: 870
   optimizer_name:
     type: categorical
     choices:
@@ -31,8 +31,8 @@ network:
     low: 2
     high: 3
   hidden_neurons:
-    low: 64
-    high: 128
+    low: 42
+    high: 127
   activation_functions:
     choices:
     - ReLU
@@ -55,4 +55,4 @@ variables:
     speed'
   output_names: consume
 display:
-  show_plot: false
+  show_plot: true
