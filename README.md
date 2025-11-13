@@ -7,7 +7,7 @@ It automatically optimizes hyperparameters, evaluates model performance, and sav
 
 ## Environment Setup
 
-Install all required dependencies:
+To install all requirements run:
 
 ```bash
 pip install -r requirements.txt

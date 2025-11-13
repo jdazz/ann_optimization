@@ -6,7 +6,7 @@ generate_plot: true
 targets:
   r2_target: 0.99
   nmae_target: 0.08
-  mre_threshold: 25.0
+  mre_threshold: 10.0
 cross_validation:
   kfold: 5
 loss_function:
@@ -14,15 +14,12 @@ loss_function:
 hyperparameter_search_space:
   n_samples: 10
   learning_rate:
-    type: loguniform
     low: 0.001
     high: 0.1
   batch_size:
-    type: int
     low: 50
     high: 150
   epochs:
-    type: int
     low: 200
     high: 500
   optimizer_name:
@@ -31,11 +28,9 @@ hyperparameter_search_space:
     - Adam
 network:
   hidden_layers:
-    type: int
     low: 2
     high: 3
   hidden_neurons:
-    type: int
     low: 64
     high: 128
   activation_functions:

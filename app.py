@@ -51,7 +51,7 @@ if 'uploaded_test_file' not in st.session_state:
 
 # --- Sidebar UI for Configuration ---
 st.sidebar.title("Model Configuration")
-st.sidebar.info("These values edit `config.yaml` directly. Click 'Save' to apply.")
+st.sidebar.info("Please upload your training and testing data files here and enter the right features and target. Adjust the model parameters as needed, then click 'Save configs' to apply changes before training.")
 
 # Load the CURRENT config file for display
 try:
@@ -130,58 +130,96 @@ with st.sidebar.form("config_form"):
     # Network Architecture
     with st.expander("Network Architecture"):
         net_conf = ui_config.get("network", {})
-        net_conf["hidden_layers"]["low"] = st.slider(
-            "Hidden Layers (Low)", 1, 10, 
-            net_conf.get("hidden_layers", {}).get("low", 2)
+
+    # --- Hidden Layers (range slider) ---
+        hidden_layers_low = net_conf.get("hidden_layers", {}).get("low", 2)
+        hidden_layers_high = net_conf.get("hidden_layers", {}).get("high", 4)
+        hidden_layers_range = st.slider(
+        "Hidden Layers Range (Min - Max)",
+            min_value=1,
+            max_value=10,
+            value=(hidden_layers_low, hidden_layers_high),
+            help="Select the minimum and maximum number of hidden layers."
         )
-        net_conf["hidden_layers"]["high"] = st.slider(
-            "Hidden Layers (High)", 1, 10, 
-            net_conf.get("hidden_layers", {}).get("high", 2)
+        net_conf["hidden_layers"] = {
+            "low": hidden_layers_range[0],
+            "high": hidden_layers_range[1]
+        }
+
+    # --- Hidden Neurons (range slider) ---
+        hidden_neurons_low = net_conf.get("hidden_neurons", {}).get("low", 30)
+        hidden_neurons_high = net_conf.get("hidden_neurons", {}).get("high", 60)
+        hidden_neurons_range = st.slider(
+            "Hidden Neurons Range (Min - Max)",
+            min_value=16,
+            max_value=256,
+            value=(hidden_neurons_low, hidden_neurons_high),
+            help="Select the minimum and maximum number of neurons per hidden layer."
         )
-        net_conf["hidden_neurons"]["low"] = st.slider(
-            "Hidden Neurons (Low)", 16, 256, 
-            net_conf.get("hidden_neurons", {}).get("low", 30)
-        )
-        net_conf["hidden_neurons"]["high"] = st.slider(
-            "Hidden Neurons (High)", 16, 256, 
-            net_conf.get("hidden_neurons", {}).get("high", 60)
-        )
-        # We must update the dictionary in place
+        net_conf["hidden_neurons"] = {
+            "low": hidden_neurons_range[0],
+            "high": hidden_neurons_range[1]
+        }
+
+    # Update config dictionary
         ui_config["network"] = net_conf
 
     # Hyperparameter Search
     with st.expander("Hyperparameter Search"):
         hpo_conf = ui_config.get("hyperparameter_search_space", {})
         hpo_conf["n_samples"] = st.number_input(
-            "Optuna Trials (n_samples)", min_value=1, 
+            "Optuna Trials (n_samples)", 
+            min_value=1, 
             value=hpo_conf.get("n_samples", 25)
         )
-        
-        # --- Slider for Learning Rate using exponents (log scale) ---
+
+        # --- Learning Rate (log-scale range slider) ---
         current_lr_low = np.log10(hpo_conf.get("learning_rate", {}).get("low", 0.0001))
         current_lr_high = np.log10(hpo_conf.get("learning_rate", {}).get("high", 0.01))
-        
+
         lr_exp_low, lr_exp_high = st.slider(
             "Learning Rate Range (10^X)", 
-            min_value=-5.0, # Corresponds to 1e-5
-            max_value=-1.0, # Corresponds to 1e-1
+            min_value=-5.0,  # 1e-5
+            max_value=-1.0,  # 1e-1
             value=(float(current_lr_low), float(current_lr_high)),
-            format="10^%.2f" # Display as 10 to the power of X
+            format="10^%.2f",
+            help="Select the range for learning rate in log10 scale (e.g., -4 = 1e-4)"
         )
-        
-        # Convert the exponents back to linear values for the config dictionary
-        hpo_conf["learning_rate"]["low"] = float(10**lr_exp_low)
-        hpo_conf["learning_rate"]["high"] = float(10**lr_exp_high)
-        # --- END FIX ---
-        
+
+        # Convert exponents back to linear values
+        hpo_conf["learning_rate"] = {
+            "low": float(10**lr_exp_low),
+            "high": float(10**lr_exp_high)
+        }
+
+        # --- Batch Size Range ---
         bs_low, bs_high = st.slider(
-            "Batch Size Range", 16, 512, 
-            (hpo_conf.get("batch_size", {}).get("low", 50), hpo_conf.get("batch_size", {}).get("high", 150))
+            "Batch Size Range", 
+            min_value=16, 
+            max_value=512, 
+            value=(
+                hpo_conf.get("batch_size", {}).get("low", 50),
+                hpo_conf.get("batch_size", {}).get("high", 150)
+            ),
+            help="Range of batch sizes to search during optimization."
         )
-        hpo_conf["batch_size"]["low"] = bs_low
-        hpo_conf["batch_size"]["high"] = bs_high
-        
-        # Update dictionary
+        hpo_conf["batch_size"] = {"low": bs_low, "high": bs_high}
+
+        # --- Epochs Range (NEW) ---
+        epochs_low, epochs_high = st.slider(
+            "Number of Epochs Range",
+            min_value=10,
+            max_value=1000,
+            value=(
+                hpo_conf.get("epochs", {}).get("low", 50),
+                hpo_conf.get("epochs", {}).get("high", 200)
+            ),
+            step=10,
+            help="Select the minimum and maximum number of training epochs to explore."
+        )
+        hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
+
+        # --- Update dictionary ---
         ui_config["hyperparameter_search_space"] = hpo_conf
 
     # --- Form Submission Buttons ---
@@ -287,6 +325,7 @@ if st.button("Start Training and Testing", type="primary"):
                     "model_structure": str(model_structure)
                 }
                 print("--- Streamlit App: Training Complete ---")
+                
 
             except Exception as e:
                 print(f"\n--- AN ERROR OCCURRED ---")
@@ -307,6 +346,19 @@ if st.session_state.training_results:
     st.success("Training and Testing Complete!")
     
     results = st.session_state.training_results
+        # --- Download Best Model Button ---
+    model_path = os.path.join("models", "ANN_best_model.pt")
+    if os.path.exists(model_path):
+        with open(model_path, "rb") as model_file:
+            st.download_button(
+                label="📥 Download Best Model",
+                data=model_file,
+                file_name="ANN_best_model.pt",
+                mime="application/octet-stream",
+                help="Click to download the trained PyTorch model file."
+            )
+    else:
+        st.warning("Best model file not found in 'models/' folder.")
     
     st.subheader("Final Performance Metrics")
     col1, col2, col3 = st.columns(3)
