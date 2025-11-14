@@ -14,25 +14,25 @@ loss_function:
 hyperparameter_search_space:
   n_samples: 10
   learning_rate:
-    low: 0.01
+    low: 0.0006760829753919819
     high: 0.1
   batch_size:
     low: 16
-    high: 50
+    high: 246
   epochs:
-    low: 350
-    high: 870
+    low: 10
+    high: 270
   optimizer_name:
     type: categorical
     choices:
     - Adam
 network:
   hidden_layers:
-    low: 2
+    low: 1
     high: 3
   hidden_neurons:
-    low: 42
-    high: 127
+    low: 16
+    high: 80
   activation_functions:
     choices:
     - ReLU

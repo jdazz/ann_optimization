@@ -123,7 +123,8 @@ with st.sidebar.form("config_form"):
         ui_config["cross_validation"]["kfold"] = st.number_input(
             "K-Fold Splits", 
             min_value=2, 
-            value=ui_config.get("cross_validation", {}).get("kfold", 5)
+            value=ui_config.get("cross_validation", {}).get("kfold", 5),
+            help="Number of folds for K-Fold Cross Validation."
         )
     
     # Network Architecture
@@ -168,7 +169,8 @@ with st.sidebar.form("config_form"):
         hpo_conf["n_samples"] = st.number_input(
             "Optuna Trials (n_samples)", 
             min_value=1, 
-            value=hpo_conf.get("n_samples", 50)
+            value=hpo_conf.get("n_samples", 50),
+            help="Number of hyperparameter combinations to try during optimization."       
         )
 
         # --- Learning Rate (log scale slider) ---
@@ -233,12 +235,12 @@ with st.sidebar.form("config_form"):
     
     submitted = col1.form_submit_button(
         "Save configs", 
-        help="This will overwrite the config.yaml file with the values above."
+        help="This will save the modified configurations."
     )
     
     reset = col2.form_submit_button(
         "Reset to Defaults", 
-        help="Resets config.yaml to the values it had when the app started."
+        help="Resets configurations to the values it had when the app started."
     )
 
     if submitted:
