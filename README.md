@@ -1,32 +1,65 @@
 # ANN Optimization
 
 This repository provides a fully automated framework for optimizing an Artificial Neural Network (ANN) using Optuna-based hyperparameter search.
-The system is designed to identify the best-performing network configuration for a user-defined regression problem.
+The system is designed to identify the best-performing network configuration for user-defined regression tasks.
 
-The workflow consists of the following stages:
+⸻
 
-	- 1.	Configurable Inputs & Outputs
-You define which variables from your dataset serve as inputs and outputs. The model, search space, and architecture are all derived from a YAML configuration file.
+Workflow Overview
 
-	- 2.	Automated Hyperparameter Optimization
-Optuna explores a wide range of hyperparameter combinations—such as learning rate, batch size, number of layers, neurons per layer, and activation functions.
-Each combination is trained and evaluated using K-fold cross-validation, ensuring robust and unbiased performance estimation.
+1. Configurable Inputs & Outputs
 
-	- 3.	Model Selection & Final Training
-After evaluating all trials, Optuna selects the best hyperparameter set based on validation loss.
-The system then rebuilds the ANN using these optimal hyperparameters and re-trains it on the full training dataset to obtain the final model.
+You can define which dataset columns act as input features and target variables.
+All model settings—including architecture and search space—are controlled via a config.yaml file.
 
-	- 4.	Model Saving & Weight Checkpointing
-The best model is saved (architecture + weights) for reproducibility and later inference.
+⸻
 
-	- 5.	Testing on Unseen Data
-The trained model is finally evaluated on a separate unseen dataset, producing metrics such as:
-	•	Coefficient of determination (R²)
+2. Automated Hyperparameter Optimization
+
+Optuna searches through a wide range of hyperparameters, such as:
+	•	Learning rate
+	•	Batch size
+	•	Number of hidden layers
+	•	Neurons per layer
+	•	Activation functions
+	•	Training epochs
+
+Each trial is trained and validated using K-fold cross-validation, ensuring robust and unbiased model evaluation.
+
+⸻
+
+3. Model Selection & Final Training
+
+After all trials finish:
+	•	Optuna selects the best-performing hyperparameter set based on validation loss.
+	•	The ANN is rebuilt using these optimal hyperparameters.
+	•	The final model is re-trained on the full training dataset to maximize predictive performance.
+
+⸻
+
+4. Model Saving & Checkpointing
+
+The best model (architecture + weights) is saved for:
+	•	Reproducibility
+	•	Deployment
+	•	Future inference
+
+⸻
+
+5. Testing on Unseen Data
+
+The final model is evaluated on a separate test dataset.
+The system reports:
+	•	R² Score
 	•	Normalized Mean Absolute Error (NMAE)
 	•	Mean Relative Error (MRE) distribution
-	•	Percentage of predictions within a specified error threshold
+	•	Accuracy threshold metrics (e.g., percentage of predictions within X% error)
 
-Together, this pipeline ensures a systematic, reproducible, and well-tuned ANN modeling process, from hyperparameter search to final performance reporting.
+⸻
+
+Summary
+
+This pipeline provides a systematic, reproducible, and fully automated approach to ANN training and optimization—from hyperparameter search to final performance reporting.
 
 ---
 
