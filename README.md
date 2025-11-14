@@ -44,11 +44,7 @@ The best model (architecture + weights) is saved for:
 5. Testing on Unseen Data
 
 The final model is evaluated on a separate test dataset.
-The system reports:
-	•	R² Score
-	•	Normalized Mean Absolute Error (NMAE)
-	•	Mean Relative Error (MRE) distribution
-	•	Accuracy threshold metrics (e.g., percentage of predictions within X% error)
+The system reports: R² Score, Normalized Mean Absolute Error (NMAE), Mean Relative Error (MRE) distribution and Accuracy threshold metrics (e.g., percentage of predictions within X% error)
 
 
 Summary
