@@ -9,6 +9,7 @@ from utils.config_utils import load_config, save_config
 from ui.sidebar import render_sidebar
 from ui.main_page import render_results, render_log, render_footer
 from core.pipeline import run_training_pipeline
+from ui.plot_utils import plot_optimization_history, plot_true_vs_predicted
 
 # --- Constants ---
 CONFIG_PATH = os.path.join(os.getcwd(), "config.yaml")
@@ -34,9 +35,12 @@ if 'uploaded_train_file' not in st.session_state:
     st.session_state.uploaded_train_file = None
 if 'uploaded_test_file' not in st.session_state:
     st.session_state.uploaded_test_file = None
-# NEW: Store the mutable config from the sidebar
 if 'current_ui_config' not in st.session_state:
     st.session_state.current_ui_config = default_config
+if 'show_history_plot' not in st.session_state:
+    st.session_state.show_history_plot = False
+if 'show_prediction_plot' not in st.session_state:
+    st.session_state.show_prediction_plot = False
 
 
 # --- Render Sidebar ---
