@@ -3,7 +3,6 @@
 This repository provides a fully automated framework for optimizing an Artificial Neural Network (ANN) using Optuna-based hyperparameter search.
 The system is designed to identify the best-performing network configuration for user-defined regression tasks.
 
-⸻
 
 Workflow Overview
 
@@ -12,7 +11,6 @@ Workflow Overview
 You can define which dataset columns act as input features and target variables.
 All model settings—including architecture and search space—are controlled via a config.yaml file.
 
-⸻
 
 2. Automated Hyperparameter Optimization
 
@@ -26,7 +24,6 @@ Optuna searches through a wide range of hyperparameters, such as:
 
 Each trial is trained and validated using K-fold cross-validation, ensuring robust and unbiased model evaluation.
 
-⸻
 
 3. Model Selection & Final Training
 
@@ -35,7 +32,6 @@ After all trials finish:
 	•	The ANN is rebuilt using these optimal hyperparameters.
 	•	The final model is re-trained on the full training dataset to maximize predictive performance.
 
-⸻
 
 4. Model Saving & Checkpointing
 
@@ -44,7 +40,6 @@ The best model (architecture + weights) is saved for:
 	•	Deployment
 	•	Future inference
 
-⸻
 
 5. Testing on Unseen Data
 
@@ -55,7 +50,6 @@ The system reports:
 	•	Mean Relative Error (MRE) distribution
 	•	Accuracy threshold metrics (e.g., percentage of predictions within X% error)
 
-⸻
 
 Summary
 
