@@ -4,17 +4,22 @@ This repository provides a fully automated framework for optimizing an Artificia
 The system is designed to identify the best-performing network configuration for a user-defined regression problem.
 
 The workflow consists of the following stages:
-	1.	Configurable Inputs & Outputs
+
+	- 1.	Configurable Inputs & Outputs
 You define which variables from your dataset serve as inputs and outputs. The model, search space, and architecture are all derived from a YAML configuration file.
-	2.	Automated Hyperparameter Optimization
+
+	- 2.	Automated Hyperparameter Optimization
 Optuna explores a wide range of hyperparameter combinations—such as learning rate, batch size, number of layers, neurons per layer, and activation functions.
 Each combination is trained and evaluated using K-fold cross-validation, ensuring robust and unbiased performance estimation.
-	3.	Model Selection & Final Training
+
+	- 3.	Model Selection & Final Training
 After evaluating all trials, Optuna selects the best hyperparameter set based on validation loss.
 The system then rebuilds the ANN using these optimal hyperparameters and re-trains it on the full training dataset to obtain the final model.
-	4.	Model Saving & Weight Checkpointing
+
+	- 4.	Model Saving & Weight Checkpointing
 The best model is saved (architecture + weights) for reproducibility and later inference.
-	5.	Testing on Unseen Data
+
+	- 5.	Testing on Unseen Data
 The trained model is finally evaluated on a separate unseen dataset, producing metrics such as:
 	•	Coefficient of determination (R²)
 	•	Normalized Mean Absolute Error (NMAE)
