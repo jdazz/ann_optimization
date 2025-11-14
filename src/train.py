@@ -12,6 +12,18 @@ import copy
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# --- NEW GLOBAL TRACKING ---
+# Used to save the best model found during the HPO process.
+BEST_MODEL_STATE = None
+BEST_LOSS = float('inf')
+TRIALS_DONE = 0
+# ---------------------------
+def stop_callback(study, trial, stop_event):
+    """Raises a TrialPruned exception if the stop button was pressed."""
+    if stop_event and stop_event.is_set():
+        raise optuna.exceptions.TrialPruned(
+            "Optimization stopped by user request."
+        )
 
 def data_crossvalidation(n_input_params, n_output_params, train, validate, batch_size):
     """
@@ -45,16 +57,19 @@ def get_loss_function(config):
 
 def crossvalidation(trial, n_input_params, n_output_params, dataset, config):
     """
-    REWRITTEN: Optuna objective function.
-    Performs K-Fold CV and returns the average validation loss.
-    Now explicitly takes the config dictionary.
+    MODIFIED: Optuna objective function.
+    Performs K-Fold CV, saves the best model found so far, and returns the average validation loss.
     """
+    global BEST_MODEL_STATE, BEST_LOSS, TRIALS_DONE # <-- Access global state
+    TRIALS_DONE += 1
+    
     print(f"\nTrial {trial.number}: ", end="")
 
     # Parse parameters from config
     kfold_splits = config.get("cross_validation", {}).get("kfold", 5)
     loss_function = get_loss_function(config)
     
+    # ... (Hyperparameter suggestion remains the same) ...
     hyperparams_config = config.get("hyperparameter_search_space", {})
     learning_rate_config = hyperparams_config.get("learning_rate", {})
     batch_size_config = hyperparams_config.get("batch_size", {})
@@ -101,6 +116,7 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset, config):
         last_epoch_val_loss = 0.0
 
         for epoch in range(epochs):
+            # ... (Training loop remains the same) ...
             fold_model.train()
             for x, y in train_loader:
                 optimizer.zero_grad()
@@ -116,7 +132,6 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset, config):
                 for x, y in val_loader:
                     pred_validate = fold_model(x)
                     val_loss_sum += loss_function(pred_validate, y).item()
-                # Average validation loss for this epoch
                 last_epoch_val_loss = val_loss_sum / len(val_loader)
 
             # Report to Optuna for pruning
@@ -132,13 +147,24 @@ def crossvalidation(trial, n_input_params, n_output_params, dataset, config):
     avg_loss = np.mean(fold_losses)
     print(f"Avg Loss: {avg_loss:.6f}")
 
+    # --- NEW: Check and save the best intermediate model ---
+    if avg_loss < BEST_LOSS:
+        BEST_LOSS = avg_loss
+        # Save the model state dict from the LAST fold as the best intermediate model
+        BEST_MODEL_STATE = fold_model.state_dict() 
+        save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
+        os.makedirs("models", exist_ok=True)
+        torch.save(BEST_MODEL_STATE, save_path)
+        print(f" (New Best Intermediate Model saved)")
+
+
     return avg_loss
 
 
 def optimization(dataset, config):
     """
     Perform hyperparameter optimization (HPO) using Optuna.
-    Now explicitly takes the config dictionary.
+    Returns the Optuna study object.
     """
     hyperparams_config = config.get("hyperparameter_search_space", {})
     
@@ -146,7 +172,11 @@ def optimization(dataset, config):
     study_direction = config.get("study", {}).get("direction", "minimize")
 
     sampler = getattr(optuna.samplers, sampler_type)()
-    study = optuna.create_study(sampler=sampler, direction=study_direction)
+    
+    # We use a database study to allow the Streamlit app to read progress, 
+    # but for simplicity in a single-user app, we'll keep it in-memory unless the user specifies persistence.
+    # For now, stick to in-memory study as in the original code.
+    study = optuna.create_study(sampler=sampler, direction=study_direction) 
     
     print("Starting Optuna Hyperparameter Optimization...")
     # Pass config into the objective function
@@ -160,15 +190,15 @@ def optimization(dataset, config):
     print(f"  Best value (avg loss): {study.best_value:.6f}")
     print(f"  Best parameters: {study.best_params}")
 
-    # Return the dictionary of best parameters
-    return study.best_params, study.best_value
+    # Return the Optuna study object
+    return study # <-- MODIFIED RETURN VALUE
 
 
 def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config):
     """
     Helper function to train the final model on the full dataset.
-    Now explicitly takes the config dictionary to get the loss function.
     """
+    # ... (This function remains unchanged as it handles final training) ...
     print(f"Retraining final model on full dataset ({len(data_train)} samples)...")
     
     input_train = np.array([row[:n_input_params] for row in data_train], dtype='float32')
@@ -211,20 +241,17 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
 
 def find_best_model(dataset):
     """
-    Main function to orchestrate the entire pipeline.
-    
-    1. Loads config.
-    2. Runs HPO to find best params.
-    3. Retrains a new model on the full dataset with those params.
-    4. Saves and returns the final model and best parameters.
+    MODIFIED: Main function to orchestrate the entire pipeline.
+    Now returns the final model, best parameters, and the Optuna study object.
     """
     # Load config internally
     config_path = os.path.join(os.getcwd(), "config.yaml")
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-        
+    
     # Run Hyperparameter Optimization
-    best_params, best_cv_loss = optimization(dataset, config)
+    study = optimization(dataset, config) # <-- Capture study object
+    best_params = study.best_params
 
     print("\n--- Creating Final Model ---")
 
@@ -244,12 +271,12 @@ def find_best_model(dataset):
         config 
     )
     
-
-
+    # ... (Model saving remains the same) ...
     os.makedirs("models", exist_ok=True)
     best_model_path = os.path.join("models", "ANN_best_model.pt")
     
     torch.save(final_model.state_dict(), best_model_path)
     print(f"Final best model's weights saved to: {best_model_path}")
     
-    return final_model, best_params
+    # MODIFIED RETURN SIGNATURE
+    return final_model, best_params, study

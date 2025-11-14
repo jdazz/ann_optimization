@@ -27,7 +27,7 @@ if __name__ == "__main__":
     dataset_test = Dataset(testing_path)
 
     # Find the best model
-    best_model, best_param = find_best_model(dataset_train)
+    best_model, best_param, study = find_best_model(dataset_train)
 
     best_model_path = os.path.join("models", "ANN_best_model.pt")
 
