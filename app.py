@@ -63,9 +63,9 @@ def initialize_session_state():
     if "current_ui_config" not in st.session_state:
         st.session_state.current_ui_config = st.session_state.config
 
-    # Paths and Results
+    # Paths and Results (Path corrected from previous steps)
     if "best_model_path" not in st.session_state:
-        st.session_state.best_model_path = "models/ANN_best_intermediate_models.pt"
+        st.session_state.best_model_path = "models/ANN_best_intermediate_model.pt"
     if "final_model_path" not in st.session_state:
         st.session_state.final_model_path = None
     if "test_results" not in st.session_state:
@@ -116,12 +116,13 @@ def process_queue_updates():
 st.set_page_config(layout="wide")
 st.title("🧠 ANN Optimization Dashboard")
 
+# Temporarily delete path for clean restart if the previous run had an error
+if "best_model_path" in st.session_state and st.session_state.best_model_path == "models/ANN_best_intermediate_models.pt":
+    del st.session_state["best_model_path"]
+    
 initialize_session_state()
 
 # --- 4. Sidebar Integration ---
-# This calls render_sidebar, which updates st.session_state.uploaded_..._file 
-# and st.session_state.current_ui_config.
-# We pass the default config so the reset button works correctly.
 render_sidebar(DEFAULT_CONFIG, CONFIG_PATH)
 
 # Fetch uploaded files from session state
@@ -141,24 +142,36 @@ with col1:
     if st.button("🚀 Start Training & Testing", disabled=start_button_disabled, type="primary"):
         if uploaded_train_file:
             
-            # --- CRITICAL FIX 1: Save UI Config to file and state ---
+            # --- START CRITICAL CONFIG SAVING & LOADING FIX ---
             latest_ui_config = st.session_state.current_ui_config
             try:
+                # 1. Save the UI state to the config file
                 save_config(latest_ui_config, CONFIG_PATH)
-                st.session_state.config = latest_ui_config # Update the main config used by the thread
                 
-                # Update total trials from the saved config
-                st.session_state.total_trials = latest_ui_config.get('hyperparameter_search_space', {}).get('n_samples', 50)
+                # 2. Re-load the config from the file to ensure the thread uses the saved version
+                #    and the total trials are correctly updated from the file.
+                st.session_state.config = load_config(CONFIG_PATH) 
                 
-                # --- ADDED: Visible Success Message ---
-                st.success("✅ Configuration saved successfully! Starting training pipeline...")
+                # 3. Update total trials in session state
+                st.session_state.total_trials = st.session_state.config.get(
+                    'hyperparameter_search_space', {}
+                ).get('n_samples', 50)
+                
+                st.success(f"✅ Configuration saved successfully! Starting pipeline with {st.session_state.total_trials} trials.")
                 st.session_state.log_messages.append("Configuration updated and saved to config.yaml.")
             except Exception as e:
-                st.error(f"🚨 Failed to save configuration: {e}")
-                st.rerun() # Rerun to display error and stop
+                st.error(f"🚨 Failed to save or load configuration: {e}")
+                st.rerun() 
+            # --- END CRITICAL CONFIG SAVING & LOADING FIX ---
                 
             # Setup data paths and save uploaded files
             os.makedirs("temp_data", exist_ok=True)
+            
+            # --- ENSURE MODEL DIR EXISTS FOR THREAD SAVING ---
+            model_dir = os.path.dirname(st.session_state.best_model_path)
+            if model_dir:
+                os.makedirs(model_dir, exist_ok=True)
+            
             train_path = f"temp_data/train_data.{uploaded_train_file.name.split('.')[-1]}"
             test_path = f"temp_data/test_data.{uploaded_test_file.name.split('.')[-1]}" if uploaded_test_file else None
             
@@ -185,7 +198,7 @@ with col1:
                 target=run_training_pipeline,
                 args=(
                     dataset_train, 
-                    st.session_state.config, # Use the freshly saved and updated config
+                    st.session_state.config, # This config object is guaranteed to be up-to-date
                     update_queue,                 
                     st.session_state,             
                     st.session_state.stop_event   
@@ -204,68 +217,75 @@ with col1:
         st.rerun() 
     
     
-    # --- Live Status Display ---
-    st.subheader("Live HPO Status")
+    # CRITICAL FIX: Only display this block if training is running or finished
+    if st.session_state.is_running or st.session_state.final_model_path:
     
-    if st.session_state.is_running:
-        st.info("Training is in progress...")
-    elif st.session_state.final_model_path:
-        st.success("Training finished!")
-    else:
-        st.warning("Training has not started or was stopped.")
-
-    # --- Progress Bar Logic ---
-    zero_indexed_trial = st.session_state.current_trial_number
-    total_trials = st.session_state.total_trials
-    
-    display_trial_number = min(zero_indexed_trial + 1, total_trials)
-    
-    if not st.session_state.is_running and zero_indexed_trial >= total_trials:
-        progress_percent = 1.0
-        display_trial_number = total_trials
-    else:
-        progress_percent = (display_trial_number / total_trials)
-    
-    st.progress(progress_percent, text=f"Trial {display_trial_number} / {total_trials}")
-    
-    # Metrics
-    m_col1, m_col2 = st.columns(2)
-    m_col1.metric("Best Loss (So Far)", f"{st.session_state.best_loss_so_far:.6f}")
-    
-    # Download Best-So-Far Model 
-    best_model_exists = os.path.exists(st.session_state.best_model_path)
-
-    if best_model_exists:
+        st.subheader("Live HPO Status")
         
-        # Read the file content into a bytes object outside the 'with open' block
-        # so the file descriptor is closed before the function returns.
-        try:
-            with open(st.session_state.best_model_path, "rb") as f:
-                model_data = f.read()
+        if st.session_state.is_running:
+            st.info("Training is in progress...")
+        elif st.session_state.final_model_path:
+            st.success("Training finished!")
+        else:
+            # This line should technically be unreachable if logic is clean, 
+            # but serves as a fallback.
+            st.warning("Training has not started or was stopped.") 
+    
+        # --- Progress Bar Logic ---
+        zero_indexed_trial = st.session_state.current_trial_number
+        total_trials = st.session_state.total_trials
+        
+        display_trial_number = min(zero_indexed_trial + 1, total_trials)
+        
+        if not st.session_state.is_running and zero_indexed_trial >= total_trials:
+            progress_percent = 1.0
+            display_trial_number = total_trials
+        else:
+            progress_percent = (display_trial_number / total_trials)
+        
+        st.progress(progress_percent, text=f"Trial {display_trial_number} / {total_trials}")
+        
+        # Metrics
+        m_col1, m_col2 = st.columns(2)
+        m_col1.metric("Best Loss (So Far)", f"{st.session_state.best_loss_so_far:.6f}")
+        
+        # Download Best-So-Far Model (Fixed to read bytes)
+        best_model_exists = os.path.exists(st.session_state.best_model_path)
+        
+        if best_model_exists:
+            try:
+                # Attempt to read the file
+                with open(st.session_state.best_model_path, "rb") as f:
+                    model_data = f.read()
                 
-            m_col2.download_button(
-                label="📥 Download Best-So-Far Model",
-                data=model_data, # Pass the actual binary data
-                file_name="best_intermediate.pt",
-                mime="application/octet-stream",
-                disabled=not best_model_exists
-            )
-        except Exception as e:
-            m_col2.error(f"Error reading model file: {e}")
+                # Provide a download button for the file
+                m_col2.download_button(
+                    label="📥 Download Best-So-Far Model",
+                    data=model_data,
+                    file_name="best_intermediate.pt",
+                    mime="application/octet-stream"
+                )
+            except Exception as e:
+                # Handle any errors during file reading
+                m_col2.error(f"Error reading model file: {e}")
+                m_col2.info("Best-so-far model will be available after the first successful trial.")
+        else:
+            # File does not exist, provide feedback to the user
             m_col2.info("Best-so-far model will be available after the first successful trial.")
-    else:
-        m_col2.info("Best-so-far model will be available after the first successful trial.")
-
-
-    st.subheader("Best Hyperparameters (So Far)")
-    st.json(st.session_state.best_params_so_far, expanded=False)
+            st.write(f"Debug: File does not exist at {st.session_state.best_model_path}")
+    
+        st.subheader("Best Hyperparameters (So Far)")
+        st.json(st.session_state.best_params_so_far, expanded=False)
 
 with col2:
-    st.header("Live Logs")
-    
-    log_container = st.empty()
-    log_text = "\n".join(list(st.session_state.log_messages)[::-1]) 
-    log_container.text_area("Logs", value=log_text, height=400, disabled=True)
+    # --- START FIX: Conditional display for Live Logs ---
+    if st.session_state.is_running or st.session_state.final_model_path:
+        st.header("Live Logs")
+        
+        log_container = st.empty()
+        log_text = "\n".join(list(st.session_state.log_messages)[::-1]) 
+        log_container.text_area("Logs", value=log_text, height=400, disabled=True)
+    # --- END FIX ---
 
 # ----------------------------------------------------------------------------------
 ## 6. Final Results Section 
@@ -304,14 +324,20 @@ if st.session_state.final_model_path and uploaded_test_file:
         r_col2.metric("Test R² Score", f"{results['R2']:.4f}")
         r_col3.metric("Test Accuracy", f"{results['Accuracy']:.2f}%")
         
-        with open(st.session_state.final_model_path, "rb") as f:
+        # Download FINAL Trained Model (Fixed to read bytes)
+        try:
+            with open(st.session_state.final_model_path, "rb") as f:
+                final_model_data = f.read()
+            
             st.download_button(
                 label="🏆 Download FINAL Trained Model",
-                data=f,
+                data=final_model_data, 
                 file_name="final_model.pt",
                 mime="application/octet-stream",
                 type="primary"
             )
+        except Exception as e:
+            st.error(f"Error preparing final model for download: {e}")
             
         st.subheader("Performance Plot")
         # Ensure make_plot returns a Figure object (based on previous fix)
@@ -356,4 +382,3 @@ if rerun_needed:
 if is_thread_alive:
     time.sleep(0.5)  # Slow down to avoid excessive reruns
     st.rerun()
-

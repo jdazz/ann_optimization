@@ -255,7 +255,7 @@ def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionSt
     study = optuna.create_study(direction="minimize")
     
     # Use config for n_trials (avoids the st_state crash)
-    n_trials_safe = config.get('optuna', {}).get('n_trials', 50) 
+    n_trials_safe = config.get('hyperparameter_search_space', {}).get('n_samples', 50) 
     
     study.optimize(
         objective, 

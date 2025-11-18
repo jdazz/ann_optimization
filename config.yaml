@@ -17,7 +17,7 @@ hyperparameter_search_space:
   learning_rate:
     low: 0.0006760829753919819
     high: 0.1
-  n_samples: 10
+  n_samples: 30
   optimizer_name:
     choices:
     - Adam
@@ -38,8 +38,6 @@ network:
     low: 16
     high: 80
   weight_initialization: xavier_uniform
-optuna:
-  n_trials: 20
 sampler:
   type: TPESampler
 study:
