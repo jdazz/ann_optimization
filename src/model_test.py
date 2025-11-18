@@ -104,5 +104,12 @@ def test(dataset, model_path, best_params):
 
     if GENERATE_PLOTS:
        make_plot(mre_list, y_pred_list, y_true_list, save_path=PLOT_SAVE_PATH)
-
-    return test_accuracy, nmae, r2, mre_list, y_pred_list, y_true_list
+    
+    test_metrics = {
+        'NMAE': nmae,
+        'R2': r2,
+        'Accuracy': test_accuracy,
+        'y_pred': y_pred_array,
+        'y_true': y_true_array
+    }
+    return test_metrics

@@ -1,4 +1,4 @@
-# FILE: ui/sidebar.py (Updated to only update ui_config)
+# FILE: ui/sidebar.py (Fixed by moving n_samples to Data Upload section)
 
 import streamlit as st
 import numpy as np
@@ -11,22 +11,20 @@ from utils.config_utils import load_config, save_config
 def render_sidebar(default_config, config_path):
     """
     Renders the configuration sidebar.
-    Configuration changes are collected and saved only when 
-    "Start Training and Testing" is clicked in the main page.
+    Configuration changes are collected and stored in st.session_state.current_ui_config.
+    The main app (app.py) is responsible for saving the config when training starts.
     """
     st.sidebar.title("Model Configuration")
-    st.sidebar.info("Adjust parameters below. Click 'Start Training' in the main page to save all changes and begin the process.")
+    st.sidebar.info("Adjust parameters below. **Advanced Settings** changes are batched until 'Start Training' is clicked.")
     st.set_option('deprecation.showPyplotGlobalUse', False)
 
     try:
-        # We need to load the current config to populate the widgets
         current_config = load_config(config_path)
     except FileNotFoundError:
         st.sidebar.error(f"Error: config.yaml not found.")
         st.stop()
 
     # Create a deepcopy to be populated by the Streamlit widgets
-    # This mutable dict (ui_config) is what the main app will save.
     ui_config = copy.deepcopy(current_config)
 
     # Initialize new sections if they don't exist
@@ -35,10 +33,12 @@ def render_sidebar(default_config, config_path):
     if "targets" not in ui_config:
          ui_config["targets"] = {"mre_threshold": 25}
 
-    # --- Widget rendering and assignment (unchanged structure) ---
-
-    # Data Section (File uploaders - no save needed here)
-    with st.sidebar.expander("Data Upload", expanded=True):
+    # ----------------------------------------------------
+    # --- 1. Data Upload (Kept separate for visibility) ---
+    # ----------------------------------------------------
+    with st.sidebar.expander("📂 Data Upload & Global Settings", expanded=True):
+        
+        # --- File Uploaders ---
         st.session_state.uploaded_train_file = st.file_uploader(
             "Upload Training Data (CSV, JSON, etc.)", 
             type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
@@ -50,120 +50,142 @@ def render_sidebar(default_config, config_path):
             key='test_uploader'
         )
 
-    # Variables & Targets
-    with st.sidebar.expander("Variables & Targets", expanded=True):
-        var_conf = ui_config.get("variables", {})
+        st.markdown("---")
         
-        input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
-        # Store the current widget value back into ui_config
-        ui_config["variables"]["input_names"] = st.text_area(
-            "Input/Feature Variables (One per line)", 
-            input_names_str,
-            key='input_vars',
-        )
-        
-        output_names_str = var_conf.get("output_names", "Target_1")
-        ui_config["variables"]["output_names"] = st.text_area(
-            "Output/Target Variables (One per line)", 
-            output_names_str,
-            key='output_vars',
-        )
-        
-        targets_conf = ui_config.get("targets", {})
-        ui_config["targets"]["mre_threshold"] = st.number_input(
-            "MRE Threshold (%)", 
-            min_value=1.0, 
-            max_value=100.0,
-            value=float(targets_conf.get("mre_threshold", 25.0)),
-            step=1.0,
-            key='mre_thresh'
-        )
-
-    # Cross Validation
-    with st.sidebar.expander("Cross Validation"):
-        cv_conf = ui_config.get("cross_validation", {})
-        ui_config["cross_validation"]["kfold"] = st.number_input(
-            "K-Fold Splits", 
-            min_value=2, 
-            value=cv_conf.get("kfold", 5),
-            key='kfold_splits'
-        )
-    
-    # Network Architecture
-    with st.sidebar.expander("Network Architecture"):
-        net_conf = ui_config.get("network", {})
-        
-        h_layers = net_conf.get("hidden_layers", {"low": 2, "high": 4})
-        hidden_layers_range = st.slider(
-            "Hidden Layers Range (Min - Max)",
-            min_value=1, max_value=10,
-            value=(h_layers.get("low", 2), h_layers.get("high", 4)),
-            key='h_layers_range'
-        )
-        net_conf["hidden_layers"] = {"low": hidden_layers_range[0], "high": hidden_layers_range[1]}
-
-        h_neurons = net_conf.get("hidden_neurons", {"low": 30, "high": 60})
-        hidden_neurons_range = st.slider(
-            "Hidden Neurons Range (Min - Max)",
-            min_value=16, max_value=256,
-            value=(h_neurons.get("low", 30), h_neurons.get("high", 60)),
-            key='h_neurons_range'
-        )
-        net_conf["hidden_neurons"] = {"low": hidden_neurons_range[0], "high": hidden_neurons_range[1]}
-        ui_config["network"] = net_conf
-
-    # Hyperparameter Search
-    with st.sidebar.expander("Hyperparameter Search"):
+        # --- Number of Trials (Moved Here) ---
         hpo_conf = ui_config.get("hyperparameter_search_space", {})
-        
         hpo_conf["n_samples"] = st.number_input(
             "Optuna Trials (n_samples)", 
             min_value=1, 
             value=hpo_conf.get("n_samples", 50),
-            key='n_samples_hpo'
+            key='n_samples_hpo',
+            help="The number of optimization trials to run during Hyperparameter Search."
         )
-        
-        lr = hpo_conf.get("learning_rate", {"low": 0.0001, "high": 0.01})
-        current_lr_low = np.log10(lr.get("low", 0.0001))
-        current_lr_high = np.log10(lr.get("high", 0.01))
-        
-        lr_exp_low, lr_exp_high = st.slider(
-            "Learning Rate Range (10^X)", 
-            min_value=-5.0, max_value=-1.0,
-            value=(float(current_lr_low), float(current_lr_high)),
-            format="10^%.2f",
-            key='lr_range'
-        )
-        hpo_conf["learning_rate"] = {"low": 10**lr_exp_low, "high": 10**lr_exp_high}
-        
-        bs = hpo_conf.get("batch_size", {"low": 50, "high": 150})
-        bs_low, bs_high = st.slider(
-            "Batch Size Range", 
-            min_value=16, max_value=512, 
-            value=(bs.get("low", 50), bs.get("high", 150)),
-            key='bs_range'
-        )
-        hpo_conf["batch_size"] = {"low": bs_low, "high": bs_high}
-        
-        ep = hpo_conf.get("epochs", {"low": 50, "high": 200})
-        epochs_low, epochs_high = st.slider(
-            "Number of Epochs Range",
-            min_value=10, max_value=1000,
-            value=(ep.get("low", 50), ep.get("high", 200)),
-            step=10,
-            key='epochs_range'
-        )
-        hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
+        # Ensure the updated hpo_conf is written back to ui_config 
         ui_config["hyperparameter_search_space"] = hpo_conf
 
-    # Plot Options
-    with st.sidebar.expander("Plot Options"):
-        ui_config["display"] = ui_config.get("display", {})
-        ui_config["display"]["show_plot"] = st.checkbox(
-            "Show Prediction Plot After Training",
-            value=ui_config["display"].get("show_plot", True),
-            key='show_plot_check', 
-        )
+
+    # ----------------------------------------------------
+    # --- 2. Advanced Settings Menu WRAPPED IN A FORM ---
+    # ----------------------------------------------------
+    
+    # CRITICAL FIX: Wrap all remaining configuration widgets in a form to batch updates. 
+    with st.sidebar.form(key='advanced_settings_form'): 
+        
+        st.markdown("### ⚙️ Advanced Settings (HPO Ranges & Network)")
+
+        # --- Variables & Targets ---
+        with st.expander("Variables & Targets", expanded=False): 
+            var_conf = ui_config.get("variables", {})
+            
+            input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
+            ui_config["variables"]["input_names"] = st.text_area(
+                "Input/Feature Variables (One per line)", 
+                input_names_str,
+                key='input_vars',
+            )
+            
+            output_names_str = var_conf.get("output_names", "Target_1")
+            ui_config["variables"]["output_names"] = st.text_area(
+                "Output/Target Variables (One per line)", 
+                output_names_str,
+                key='output_vars',
+            )
+            
+            targets_conf = ui_config.get("targets", {})
+            ui_config["targets"]["mre_threshold"] = st.number_input(
+                "MRE Threshold (%)", 
+                min_value=1.0, 
+                max_value=100.0,
+                value=float(targets_conf.get("mre_threshold", 25.0)),
+                step=1.0,
+                key='mre_thresh'
+            )
+
+        # --- Cross Validation ---
+        with st.expander("Cross Validation", expanded=False):
+            cv_conf = ui_config.get("cross_validation", {})
+            ui_config["cross_validation"]["kfold"] = st.number_input(
+                "K-Fold Splits", 
+                min_value=2, 
+                value=cv_conf.get("kfold", 5),
+                key='kfold_splits'
+            )
+        
+        # --- Network Architecture ---
+        with st.expander("Network Architecture", expanded=False):
+            net_conf = ui_config.get("network", {})
+            
+            h_layers = net_conf.get("hidden_layers", {"low": 2, "high": 4})
+            hidden_layers_range = st.slider(
+                "Hidden Layers Range (Min - Max)",
+                min_value=1, max_value=10,
+                value=(h_layers.get("low", 2), h_layers.get("high", 4)),
+                key='h_layers_range'
+            )
+            net_conf["hidden_layers"] = {"low": hidden_layers_range[0], "high": hidden_layers_range[1]}
+
+            h_neurons = net_conf.get("hidden_neurons", {"low": 30, "high": 60})
+            hidden_neurons_range = st.slider(
+                "Hidden Neurons Range (Min - Max)",
+                min_value=16, max_value=256,
+                value=(h_neurons.get("low", 30), h_neurons.get("high", 60)),
+                key='h_neurons_range'
+            )
+            net_conf["hidden_neurons"] = {"low": hidden_neurons_range[0], "high": hidden_neurons_range[1]}
+            ui_config["network"] = net_conf
+
+        # --- Hyperparameter Search (Only Ranges Remain) ---
+        with st.expander("Hyperparameter Search Ranges", expanded=False):
+            hpo_conf = ui_config.get("hyperparameter_search_space", {})
+            
+            # n_samples has been removed from here
+            
+            lr = hpo_conf.get("learning_rate", {"low": 0.0001, "high": 0.01})
+            current_lr_low = np.log10(lr.get("low", 0.0001))
+            current_lr_high = np.log10(lr.get("high", 0.01))
+            
+            lr_exp_low, lr_exp_high = st.slider(
+                "Learning Rate Range (10^X)", 
+                min_value=-5.0, max_value=-1.0,
+                value=(float(current_lr_low), float(current_lr_high)),
+                format="10^%.2f",
+                key='lr_range'
+            )
+            hpo_conf["learning_rate"] = {"low": 10**lr_exp_low, "high": 10**lr_exp_high}
+            
+            bs = hpo_conf.get("batch_size", {"low": 50, "high": 150})
+            bs_low, bs_high = st.slider(
+                "Batch Size Range", 
+                min_value=16, max_value=512, 
+                value=(bs.get("low", 50), bs.get("high", 150)),
+                key='bs_range'
+            )
+            hpo_conf["batch_size"] = {"low": bs_low, "high": bs_high}
+            
+            ep = hpo_conf.get("epochs", {"low": 50, "high": 200})
+            epochs_low, epochs_high = st.slider(
+                "Number of Epochs Range",
+                min_value=10, max_value=1000,
+                value=(ep.get("low", 50), ep.get("high", 200)),
+                step=10,
+                key='epochs_range'
+            )
+            hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
+            ui_config["hyperparameter_search_space"] = hpo_conf # Update config with HPO ranges
+
+        # --- Plot Options ---
+        with st.expander("Plot Options", expanded=False):
+            ui_config["display"] = ui_config.get("display", {})
+            ui_config["display"]["show_plot"] = st.checkbox(
+                "Show Prediction Plot After Training",
+                value=ui_config["display"].get("show_plot", True),
+                key='show_plot_check', 
+            )
+        
+        # Add a submit button to the form. 
+        st.form_submit_button("Apply Configuration", type="secondary")
+
 
     # --- Reset Button (Only immediate action in sidebar) ---
     st.sidebar.markdown("---")
@@ -179,4 +201,4 @@ def render_sidebar(default_config, config_path):
     # Store the latest UI configuration into session state for the main app to access
     st.session_state.current_ui_config = ui_config
     
-    # NOTE: The final save logic is now in app.py
+    return ui_config

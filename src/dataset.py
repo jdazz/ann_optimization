@@ -6,8 +6,22 @@ from sklearn.utils import resample
 import yaml
 
 
-
 class Dataset:
+    def _parse_var_names(self, var_string):
+        """
+        Parses a string of variable names (which may contain newlines) 
+        into a clean list of strings.
+        """
+        if isinstance(var_string, str):
+            # Split by newline or comma, strip whitespace, and filter out empty strings
+            names = [name.strip() for name in var_string.split() if name.strip()]
+            return names
+        elif isinstance(var_string, list):
+             # Already a list, just return it
+             return var_string
+        return [] # Return empty list if format is unexpected
+
+
     def __init__(self, source=None):
         """
         Flexible Dataset loader. Supports:
@@ -22,10 +36,22 @@ class Dataset:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
-        data_config = config.get("data", {})
-        input_vars = data_config.get("input_variables", [])
-        output_vars = data_config.get("output_variables", [])
-        train_ratio = data_config.get("train_ratio", 0.95)
+        data_config = config.get("variables", {})
+        
+        # --- CRITICAL ADAPTATION ---
+        # Parse multi-line string input/output variables into clean lists
+        raw_input_vars = data_config.get("input_names", "")
+        raw_output_vars = data_config.get("output_names", "")
+        
+        input_vars = self._parse_var_names(raw_input_vars)
+        output_vars = self._parse_var_names(raw_output_vars)
+        
+        if not input_vars or not output_vars:
+            raise ValueError(
+                f"Configuration error: Input or output variables are not defined. Input: {input_vars}, Output: {output_vars}"
+            )
+        # ---------------------------
+
         self.name = None
         self.dataset = None 
 
@@ -35,6 +61,8 @@ class Dataset:
             self.name = "DataFrame"
 
         # --- Load from numpy array ---
+        # NOTE: When loading from np.ndarray, column naming needs input_vars and output_vars 
+        # to match the dataset's actual structure, which can be tricky without a header.
         elif isinstance(source, np.ndarray):
             self.dataset = pd.DataFrame(source, columns=input_vars + output_vars)
             self.name = "ndarray"
@@ -55,9 +83,11 @@ class Dataset:
                     df = pd.DataFrame(data)
 
                 elif isinstance(data, list) and all(isinstance(d, list) for d in data):
+                    # This branch is complex and assumes data order, which is risky.
+                    # It's better to ensure JSON data has headers (dicts).
                     num_cols = len(data[0])
                     temp_cols = [f"col_{i}" for i in range(num_cols)]
-                    df = pd.DataFrame(data, columns=temp_cols)
+                    df = pd.DataFrame(data, columns=temp_cols) 
 
                 else:
                     raise ValueError("Unsupported JSON structure.")
@@ -74,6 +104,7 @@ class Dataset:
                     self.dataset = pd.read_csv(source, encoding="utf-8")
                 except UnicodeDecodeError:
                     self.dataset = pd.read_csv(source, encoding="latin1")
+                # Now that input_vars and output_vars are lists, this works
                 self.dataset = self.dataset[input_vars + output_vars]
 
             elif ext in [".xls", ".xlsx"]:
@@ -108,4 +139,3 @@ class Dataset:
 
     def get_rows(self):
         return len(self.input_data)
-

@@ -1,0 +1,2802 @@
+
+  [
+    {
+      "distance": 28.0,
+      "speed": 26.0,
+      "temp_inside": 21.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.0,
+      "speed": 30.0,
+      "temp_inside": 21.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 11.2,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 18.5,
+      "speed": 46.0,
+      "temp_inside": 21.5,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 8.3,
+      "speed": 50.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.4
+    },
+    {
+      "distance": 7.8,
+      "speed": 43.0,
+      "temp_inside": 21.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 12.3,
+      "speed": 40.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 4.9,
+      "speed": 26.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.4
+    },
+    {
+      "distance": 11.9,
+      "speed": 30.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 12.4,
+      "speed": 42.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 12.4,
+      "speed": 46.0,
+      "temp_inside": 21.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 11.8,
+      "speed": 32.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 25.9,
+      "speed": 39.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 40.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 25.3,
+      "speed": 32.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 14.2,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.9
+    },
+    {
+      "distance": 12.3,
+      "speed": 62.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.9
+    },
+    {
+      "distance": 12.4,
+      "speed": 57.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 18.4,
+      "speed": 21.0,
+      "temp_inside": 22.5,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 18.4,
+      "speed": 28.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.8
+    },
+    {
+      "distance": 18.3,
+      "speed": 29.0,
+      "temp_inside": 21.5,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 18.4,
+      "speed": 35.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 12.3,
+      "speed": 51.0,
+      "temp_inside": 21.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 11.8,
+      "speed": 29.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.3,
+      "speed": 58.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 32.6,
+      "speed": 40.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 19.0,
+      "speed": 36.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 20.0,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 4.9,
+      "speed": 26.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 7.4
+    },
+    {
+      "distance": 11.8,
+      "speed": 23.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 12.3,
+      "speed": 58.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.5
+    },
+    {
+      "distance": 4.5,
+      "speed": 29.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 11.7,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 10.2,
+      "speed": 44.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 2.0,
+      "speed": 21.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 9.9
+    },
+    {
+      "distance": 14.2,
+      "speed": 32.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 11.8,
+      "speed": 25.0,
+      "temp_inside": 21.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 29.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 13.1,
+      "speed": 46.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.1
+    },
+    {
+      "distance": 6.1,
+      "speed": 28.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.4
+    },
+    {
+      "distance": 153.5,
+      "speed": 82.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 12.4,
+      "speed": 57.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 12.3,
+      "speed": 52.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 2.9,
+      "speed": 18.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 7.9
+    },
+    {
+      "distance": 2.1,
+      "speed": 23.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 12.2
+    },
+    {
+      "distance": 9.8,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.8
+    },
+    {
+      "distance": 12.4,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 12.4,
+      "speed": 57.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 11.8,
+      "speed": 41.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 12.3,
+      "speed": 55.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 14.0,
+      "speed": 40.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 11.8,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 12.3,
+      "speed": 55.0,
+      "temp_inside": 21.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 13.9,
+      "speed": 29.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 9.7,
+      "speed": 42.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 11.6,
+      "speed": 25.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 14.2,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 11.8,
+      "speed": 39.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 24.8,
+      "speed": 50.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 12.4,
+      "speed": 56.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 14.2,
+      "speed": 36.0,
+      "temp_inside": 20.0,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 10.5,
+      "speed": 42.0,
+      "temp_inside": 20.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 25.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 12.3,
+      "speed": 58.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.2
+    },
+    {
+      "distance": 13.2,
+      "speed": 51.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 13.0,
+      "speed": 45.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.9,
+      "speed": 32.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 13.9,
+      "speed": 22.0,
+      "temp_inside": 20.0,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 37.0,
+      "temp_inside": 20.0,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 12.2,
+      "speed": 60.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.8
+    },
+    {
+      "distance": 12.5,
+      "speed": 51.0,
+      "temp_inside": 20.0,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 12.4,
+      "speed": 43.0,
+      "temp_inside": null,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 11.8,
+      "speed": 21.0,
+      "temp_inside": 20.0,
+      "temp_outside": 9.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 52.0,
+      "temp_inside": null,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 12.5,
+      "speed": 57.0,
+      "temp_inside": 20.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 15.7,
+      "speed": 33.0,
+      "temp_inside": null,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 6.4,
+      "speed": 37.0,
+      "temp_inside": null,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 5.3,
+      "speed": 34.0,
+      "temp_inside": null,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 18.8,
+      "speed": 62.0,
+      "temp_inside": null,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 4.9,
+      "speed": 25.0,
+      "temp_inside": 21.0,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.9
+    },
+    {
+      "distance": 12.4,
+      "speed": 18.0,
+      "temp_inside": 21.0,
+      "temp_outside": 11.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 22.9,
+      "speed": 45.0,
+      "temp_inside": 20.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 162.7,
+      "speed": 75.0,
+      "temp_inside": 23.0,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 11.8,
+      "speed": 36.0,
+      "temp_inside": 21.0,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 16.6,
+      "speed": 56.0,
+      "temp_inside": 21.0,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 22.4,
+      "speed": 66.0,
+      "temp_inside": 20.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 4.9,
+      "speed": 27.0,
+      "temp_inside": 20.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.3
+    },
+    {
+      "distance": 22.9,
+      "speed": 42.0,
+      "temp_inside": 23.0,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.0
+    },
+    {
+      "distance": 12.4,
+      "speed": 38.0,
+      "temp_inside": 23.0,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 43.0,
+      "temp_inside": 23.0,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 12.2,
+      "speed": 58.0,
+      "temp_inside": 23.0,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.8
+    },
+    {
+      "distance": 24.8,
+      "speed": 55.0,
+      "temp_inside": 23.0,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 14.2,
+      "speed": 24.0,
+      "temp_inside": 23.0,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 38.0,
+      "temp_inside": 23.0,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 24.7,
+      "speed": 56.0,
+      "temp_inside": 25.0,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 6.8,
+      "speed": 46.0,
+      "temp_inside": 24.0,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 17.3,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 11.8,
+      "speed": 44.0,
+      "temp_inside": 21.5,
+      "temp_outside": -3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 15.9,
+      "speed": 46.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 5.1,
+      "speed": 39.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.4
+    },
+    {
+      "distance": 16.1,
+      "speed": 33.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 11.8,
+      "speed": 43.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 4.2,
+      "speed": 26.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.0
+    },
+    {
+      "distance": 11.8,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 12.3,
+      "speed": 61.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.1
+    },
+    {
+      "distance": 16.1,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 12.3,
+      "speed": 58.0,
+      "temp_inside": 21.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 7.0,
+      "speed": 25.0,
+      "temp_inside": 21.5,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 11.8,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 20.1,
+      "speed": 41.0,
+      "temp_inside": 21.5,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 20.8,
+      "speed": 45.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 1.7,
+      "speed": 14.0,
+      "temp_inside": 21.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 10.8
+    },
+    {
+      "distance": 36.9,
+      "speed": 52.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 9.9,
+      "speed": 28.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 22.9,
+      "speed": 61.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 17.3,
+      "speed": 61.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 11.8,
+      "speed": 37.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 36.6,
+      "speed": 80.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 44.9,
+      "speed": 62.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 11.8,
+      "speed": 34.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 21.6,
+      "speed": 44.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 39.4,
+      "speed": 60.0,
+      "temp_inside": 21.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 5.1,
+      "speed": 39.0,
+      "temp_inside": 21.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 8.1
+    },
+    {
+      "distance": 26.6,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 53.2,
+      "speed": 71.0,
+      "temp_inside": 21.5,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 18.9,
+      "speed": 53.0,
+      "temp_inside": 21.5,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 43.5,
+      "speed": 80.0,
+      "temp_inside": 21.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 6.1,
+      "speed": 26.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.3
+    },
+    {
+      "distance": 16.4,
+      "speed": 49.0,
+      "temp_inside": 21.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 12.3,
+      "speed": 40.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.1
+    },
+    {
+      "distance": 21.1,
+      "speed": 36.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 21.1,
+      "speed": 43.0,
+      "temp_inside": 21.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 22.7,
+      "speed": 55.0,
+      "temp_inside": 21.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 44.4,
+      "speed": 38.0,
+      "temp_inside": 21.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 11.8,
+      "speed": 44.0,
+      "temp_inside": 21.5,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 40.6,
+      "speed": 44.0,
+      "temp_inside": 21.0,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 14.1,
+      "speed": 47.0,
+      "temp_inside": 21.0,
+      "temp_outside": -3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 58.7,
+      "speed": 75.0,
+      "temp_inside": 21.0,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 16.2,
+      "speed": 29.0,
+      "temp_inside": 21.0,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 12.3,
+      "speed": 50.0,
+      "temp_inside": 22.5,
+      "temp_outside": 0.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 12.4,
+      "speed": 51.0,
+      "temp_inside": 22.5,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 12.3,
+      "speed": 55.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 12.3,
+      "speed": 41.0,
+      "temp_inside": 22.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 81.2,
+      "speed": 69.0,
+      "temp_inside": 22.0,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 67.2,
+      "speed": 67.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 43.7,
+      "speed": 44.0,
+      "temp_inside": 22.0,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 12.1,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 11.8,
+      "speed": 41.0,
+      "temp_inside": 21.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 38.5,
+      "speed": 63.0,
+      "temp_inside": 21.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 28.2,
+      "speed": 54.0,
+      "temp_inside": 21.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 2.9,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 7.4
+    },
+    {
+      "distance": 6.1,
+      "speed": 24.0,
+      "temp_inside": 21.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 19.6,
+      "speed": 43.0,
+      "temp_inside": 21.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 22.2,
+      "speed": 42.0,
+      "temp_inside": null,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 13.6,
+      "speed": 44.0,
+      "temp_inside": 19.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 12.6,
+      "speed": 33.0,
+      "temp_inside": null,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 8.7,
+      "speed": 28.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 7.9,
+      "speed": 31.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 2.4,
+      "speed": 26.0,
+      "temp_inside": 20.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 9.0
+    },
+    {
+      "distance": 4.9,
+      "speed": 26.0,
+      "temp_inside": 20.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.3
+    },
+    {
+      "distance": 18.1,
+      "speed": 36.0,
+      "temp_inside": 20.0,
+      "temp_outside": 19.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.6
+    },
+    {
+      "distance": 25.9,
+      "speed": 39.0,
+      "temp_inside": 20.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 1.3,
+      "speed": 21.0,
+      "temp_inside": 20.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 11.5
+    },
+    {
+      "distance": 14.1,
+      "speed": 22.0,
+      "temp_inside": 20.0,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 13.4,
+      "speed": 31.0,
+      "temp_inside": 20.0,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.5
+    },
+    {
+      "distance": 6.4,
+      "speed": 33.0,
+      "temp_inside": 20.0,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 12.1,
+      "speed": 33.0,
+      "temp_inside": 22.5,
+      "temp_outside": 5.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 16.2,
+      "speed": 26.0,
+      "temp_inside": 22.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 12.8,
+      "speed": 22.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 19.0,
+      "speed": 58.0,
+      "temp_inside": 22.5,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 29.0,
+      "speed": 27.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 12.1,
+      "speed": 32.0,
+      "temp_inside": 22.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.3,
+      "speed": 55.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 24.8,
+      "speed": 56.0,
+      "temp_inside": 22.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 12.9,
+      "speed": 34.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 11.8,
+      "speed": 39.0,
+      "temp_inside": 22.5,
+      "temp_outside": 3.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 31.4,
+      "speed": 62.0,
+      "temp_inside": 22.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 19.0,
+      "speed": 53.0,
+      "temp_inside": 22.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 13.0,
+      "speed": 38.0,
+      "temp_inside": 22.5,
+      "temp_outside": 3.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 13.0,
+      "speed": 32.0,
+      "temp_inside": 22.5,
+      "temp_outside": 4.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 6.2
+    },
+    {
+      "distance": 11.8,
+      "speed": 43.0,
+      "temp_inside": 22.5,
+      "temp_outside": 1.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 5.2,
+      "speed": 38.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 19.0,
+      "speed": 29.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 25.2,
+      "speed": 55.0,
+      "temp_inside": 22.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 14.3,
+      "speed": 36.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 11.8,
+      "speed": 40.0,
+      "temp_inside": 22.5,
+      "temp_outside": 2.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 16.9,
+      "speed": 48.0,
+      "temp_inside": 22.5,
+      "temp_outside": 9.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 12.4,
+      "speed": 55.0,
+      "temp_inside": 22.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 17.4,
+      "speed": 36.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 9.2,
+      "speed": 33.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 12.3,
+      "speed": 54.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.8
+    },
+    {
+      "distance": 13.0,
+      "speed": 32.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 16.0,
+      "temp_inside": 22.5,
+      "temp_outside": 6.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 6.1
+    },
+    {
+      "distance": 13.0,
+      "speed": 37.0,
+      "temp_inside": 22.5,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.7
+    },
+    {
+      "distance": 12.3,
+      "speed": 42.0,
+      "temp_inside": 22.5,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.3,
+      "speed": 57.0,
+      "temp_inside": 22.5,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 12.5,
+      "speed": 57.0,
+      "temp_inside": 22.5,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 31.5,
+      "speed": 30.0,
+      "temp_inside": 22.5,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 11.8,
+      "speed": 42.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 24.9,
+      "speed": 53.0,
+      "temp_inside": 22.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 17.0,
+      "speed": 46.0,
+      "temp_inside": 22.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 2.0,
+      "speed": 20.0,
+      "temp_inside": 22.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 8.1
+    },
+    {
+      "distance": 11.8,
+      "speed": 33.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 7.4,
+      "speed": 31.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 12.4,
+      "speed": 55.0,
+      "temp_inside": 22.5,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 14.0,
+      "speed": 41.0,
+      "temp_inside": 22.5,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 25.7,
+      "speed": 45.0,
+      "temp_inside": 22.5,
+      "temp_outside": 7.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 24.5,
+      "speed": 50.0,
+      "temp_inside": null,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 11.8,
+      "speed": 28.0,
+      "temp_inside": 22.5,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 4.1,
+      "speed": 24.0,
+      "temp_inside": 22.5,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.4
+    },
+    {
+      "distance": 4.2,
+      "speed": 29.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 4.2,
+      "speed": 29.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 16.0,
+      "speed": 40.0,
+      "temp_inside": 22.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 22.9,
+      "speed": 29.0,
+      "temp_inside": null,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 16.0,
+      "speed": 42.0,
+      "temp_inside": null,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 15.4,
+      "speed": 50.0,
+      "temp_inside": 22.0,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 16.0,
+      "speed": 41.0,
+      "temp_inside": 22.0,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 4.2,
+      "speed": 32.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 101.9,
+      "speed": 75.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 93.9,
+      "speed": 88.0,
+      "temp_inside": 23.0,
+      "temp_outside": 18.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 16.0,
+      "speed": 40.0,
+      "temp_inside": 22.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 16.1,
+      "speed": 32.0,
+      "temp_inside": 22.0,
+      "temp_outside": 19.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 16.0,
+      "speed": 40.0,
+      "temp_inside": 22.0,
+      "temp_outside": 7.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 16.0,
+      "speed": 41.0,
+      "temp_inside": 22.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 16.0,
+      "speed": 42.0,
+      "temp_inside": 22.0,
+      "temp_outside": 8.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 15.4,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 32.1,
+      "speed": 50.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 25.9,
+      "speed": 40.0,
+      "temp_inside": 22.0,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 48.6,
+      "speed": 44.0,
+      "temp_inside": 22.0,
+      "temp_outside": 12.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 37.2,
+      "speed": 45.0,
+      "temp_inside": 22.0,
+      "temp_outside": 20.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 6.7,
+      "speed": 30.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 7.4,
+      "speed": 25.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 17.3,
+      "speed": 22.0,
+      "temp_inside": 22.0,
+      "temp_outside": 25.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 6.6,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.6
+    },
+    {
+      "distance": 14.3,
+      "speed": 26.0,
+      "temp_inside": 22.0,
+      "temp_outside": 20.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 13.3,
+      "speed": 33.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 8.3,
+      "speed": 26.0,
+      "temp_inside": 22.0,
+      "temp_outside": 23.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 16.5,
+      "speed": 47.0,
+      "temp_inside": 22.0,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 20.6,
+      "speed": 38.0,
+      "temp_inside": 22.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 16.3,
+      "speed": 58.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 18.7,
+      "speed": 65.0,
+      "temp_inside": 25.0,
+      "temp_outside": 18.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 36.5,
+      "speed": 54.0,
+      "temp_inside": 23.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 29.9,
+      "speed": 32.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 16.0,
+      "speed": 42.0,
+      "temp_inside": 22.0,
+      "temp_outside": 11.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 21.1,
+      "speed": 33.0,
+      "temp_inside": 22.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 16.0,
+      "speed": 40.0,
+      "temp_inside": 22.0,
+      "temp_outside": 10.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 11.9,
+      "speed": 34.0,
+      "temp_inside": 22.0,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 18.7,
+      "speed": 60.0,
+      "temp_inside": 22.0,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 10.8,
+      "speed": 48.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 19.8,
+      "speed": 56.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 11.3,
+      "speed": 38.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 11.5,
+      "speed": 53.0,
+      "temp_inside": 22.0,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 21.4,
+      "speed": 51.0,
+      "temp_inside": 22.0,
+      "temp_outside": 13.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 41.9,
+      "speed": 53.0,
+      "temp_inside": 22.0,
+      "temp_outside": 14.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 211.0,
+      "speed": 80.0,
+      "temp_inside": 22.0,
+      "temp_outside": 20.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 216.1,
+      "speed": 90.0,
+      "temp_inside": 22.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.3
+    },
+    {
+      "distance": 25.5,
+      "speed": 27.0,
+      "temp_inside": 22.0,
+      "temp_outside": 27.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.6
+    },
+    {
+      "distance": 25.9,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 16.5,
+      "speed": 48.0,
+      "temp_inside": 22.0,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 22.1,
+      "speed": 29.0,
+      "temp_inside": 22.0,
+      "temp_outside": 26.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 15.4,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 15.4,
+      "speed": 21.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 18.4,
+      "speed": 59.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 39.5,
+      "speed": 58.0,
+      "temp_inside": 22.0,
+      "temp_outside": 25.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 21.5,
+      "speed": 47.0,
+      "temp_inside": 25.0,
+      "temp_outside": 27.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 100.9,
+      "speed": 87.0,
+      "temp_inside": 23.5,
+      "temp_outside": 22.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.7
+    },
+    {
+      "distance": 129.7,
+      "speed": 58.0,
+      "temp_inside": 24.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 16.6,
+      "speed": 43.0,
+      "temp_inside": 21.5,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 15.4,
+      "speed": 50.0,
+      "temp_inside": 21.5,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 16.0,
+      "speed": 45.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 15.4,
+      "speed": 45.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 16.0,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 21.0,
+      "speed": 37.0,
+      "temp_inside": 22.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 15.4,
+      "speed": 47.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 16.1,
+      "speed": 30.0,
+      "temp_inside": 25.0,
+      "temp_outside": 16.0,
+      "AC": 1.0,
+      "rain": 1.0,
+      "consume": 5.1
+    },
+    {
+      "distance": 16.0,
+      "speed": 42.0,
+      "temp_inside": 22.0,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 17.2,
+      "speed": 35.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 16.6,
+      "speed": 50.0,
+      "temp_inside": 22.0,
+      "temp_outside": 25.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 16.1,
+      "speed": 36.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 1.0,
+      "consume": 4.8
+    },
+    {
+      "distance": 16.0,
+      "speed": 46.0,
+      "temp_inside": 22.0,
+      "temp_outside": 17.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 16.3,
+      "speed": 35.0,
+      "temp_inside": 22.0,
+      "temp_outside": 23.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 16.0,
+      "speed": 44.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 18.3,
+      "speed": 46.0,
+      "temp_inside": 22.0,
+      "temp_outside": 23.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 4.5,
+      "speed": 23.0,
+      "temp_inside": 22.0,
+      "temp_outside": 23.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.2
+    },
+    {
+      "distance": 17.0,
+      "speed": 48.0,
+      "temp_inside": 22.0,
+      "temp_outside": 16.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.2
+    },
+    {
+      "distance": 6.1,
+      "speed": 33.0,
+      "temp_inside": 22.0,
+      "temp_outside": 24.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 16.0,
+      "speed": 45.0,
+      "temp_inside": 22.0,
+      "temp_outside": 15.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 15.4,
+      "speed": 55.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.9
+    },
+    {
+      "distance": 15.4,
+      "speed": 39.0,
+      "temp_inside": 22.0,
+      "temp_outside": 23.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 16.0,
+      "speed": 35.0,
+      "temp_inside": 22.0,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 15.4,
+      "speed": 52.0,
+      "temp_inside": 22.0,
+      "temp_outside": 26.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 15.4,
+      "speed": 48.0,
+      "temp_inside": 25.5,
+      "temp_outside": 31.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 16.0,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 21.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 15.4,
+      "speed": 42.0,
+      "temp_inside": 22.0,
+      "temp_outside": 30.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.5
+    },
+    {
+      "distance": 16.0,
+      "speed": 43.0,
+      "temp_inside": 22.0,
+      "temp_outside": 19.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.6
+    },
+    {
+      "distance": 20.9,
+      "speed": 33.0,
+      "temp_inside": 22.0,
+      "temp_outside": 21.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.1
+    },
+    {
+      "distance": 32.1,
+      "speed": 47.0,
+      "temp_inside": 22.0,
+      "temp_outside": 26.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.9
+    },
+    {
+      "distance": 28.5,
+      "speed": 44.0,
+      "temp_inside": 25.0,
+      "temp_outside": 23.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.0
+    },
+    {
+      "distance": 11.9,
+      "speed": 33.0,
+      "temp_inside": 25.0,
+      "temp_outside": 19.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 14.5,
+      "speed": 36.0,
+      "temp_inside": 25.0,
+      "temp_outside": 22.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 16.2,
+      "speed": 39.0,
+      "temp_inside": 24.5,
+      "temp_outside": 17.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.4
+    },
+    {
+      "distance": 8.3,
+      "speed": 52.0,
+      "temp_inside": 24.5,
+      "temp_outside": 27.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 5.0
+    },
+    {
+      "distance": 5.5,
+      "speed": 33.0,
+      "temp_inside": 24.5,
+      "temp_outside": 28.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 13.6,
+      "speed": 33.0,
+      "temp_inside": 24.5,
+      "temp_outside": 28.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 16.0,
+      "speed": 39.0,
+      "temp_inside": 24.5,
+      "temp_outside": 18.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.7
+    },
+    {
+      "distance": 16.1,
+      "speed": 38.0,
+      "temp_inside": 25.0,
+      "temp_outside": 31.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.3
+    },
+    {
+      "distance": 16.0,
+      "speed": 45.0,
+      "temp_inside": 25.0,
+      "temp_outside": 19.0,
+      "AC": 0.0,
+      "rain": 0.0,
+      "consume": 3.8
+    },
+    {
+      "distance": 15.4,
+      "speed": 42.0,
+      "temp_inside": 25.0,
+      "temp_outside": 31.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 4.6
+    },
+    {
+      "distance": 14.7,
+      "speed": 25.0,
+      "temp_inside": 25.0,
+      "temp_outside": 30.0,
+      "AC": 1.0,
+      "rain": 0.0,
+      "consume": 5.0
+    }
+  ]
