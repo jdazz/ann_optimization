@@ -14,7 +14,7 @@ hyperparameter_search_space:
     high: 246
   epochs:
     low: 10
-    high: 270
+    high: 300
   learning_rate:
     low: 0.0006760829753919819
     high: 0.1

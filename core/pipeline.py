@@ -10,7 +10,12 @@ from streamlit.runtime.state import SessionStateProxy
 from src.train import optimization, train_final_model
 from src.model import define_net_regression
 
+from utils.save_onnx import export_to_onnx
+
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+
 
 # Function Signature Change: Remove st_state, use update_queue as the first parameter
 def run_training_pipeline(dataset_train, config, update_queue: queue.Queue, st_state: SessionStateProxy, stop_event: threading.Event):
@@ -50,12 +55,17 @@ def run_training_pipeline(dataset_train, config, update_queue: queue.Queue, st_s
         os.makedirs("models", exist_ok=True)
         final_model_path = os.path.join("models", "ANN_final_model.pt")
         torch.save(final_model.state_dict(), final_model_path)
+
+        # 6. Export Model to ONNX Format
+        final_onnx_path = export_to_onnx(final_model, dataset_train, os.path.join("models", "ANN_final_model"))
         
         # 5. Send Final Status Updates to Streamlit
         send_update('final_model_path', final_model_path)
+        send_update('final_onnx_path', final_onnx_path)
         send_update('best_params_so_far', best_params)
         send_update('log_messages', f"Final best model saved to: {final_model_path}")
         send_update('is_running', False) # Signal completion to the UI
+
 
     except Exception as e:
         send_update('log_messages', f"❌ An error occurred in the training pipeline: {e}")

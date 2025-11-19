@@ -5,9 +5,9 @@ import threading
 import time
 import os
 import yaml
-import json  # NEW: For saving scaler parameters
-import io    # NEW: For in-memory file handling
-import zipfile # NEW: For creating ZIP archives
+import json
+import io
+import zipfile
 import numpy as np
 from collections import deque
 import queue
@@ -98,6 +98,10 @@ def initialize_session_state():
 
     if "best_model_path" not in st.session_state:
         st.session_state.best_model_path = "models/ANN_best_intermediate_model.pt"
+    # NEW: Store path for best-so-far ONNX
+    if "best_onnx_path" not in st.session_state:
+        st.session_state.best_onnx_path = None
+    
     if "final_model_path" not in st.session_state:
         st.session_state.final_model_path = None
 
@@ -152,7 +156,7 @@ def process_queue_updates():
 # ----------------------------------------------------------------------------------
 
 st.set_page_config(layout="wide")
-st.title("🧠 ANN Optimization Dashboard")
+st.title("ANN Optimization Dashboard")
 
 if "best_model_path" in st.session_state and st.session_state.best_model_path == "models/ANN_best_intermediate_models.pt":
     del st.session_state["best_model_path"]
@@ -182,7 +186,7 @@ with col1:
     st.header("Training Control")
 
     start_button_disabled = st.session_state.is_running or not uploaded_train_file
-    if st.button("🚀 Start Training & Testing", disabled=start_button_disabled, type="primary"):
+    if st.button("Start Training & Testing", disabled=start_button_disabled, type="primary"):
         if uploaded_train_file:
 
             latest_ui_config = st.session_state.current_ui_config
@@ -217,6 +221,8 @@ with col1:
             st.session_state.best_loss_so_far = float("inf")
             st.session_state.current_trial_number = 0
             st.session_state.final_model_path = None
+            st.session_state.final_onnx_path = None # Reset final ONNX
+            st.session_state.best_onnx_path = None  # Reset intermediate ONNX
             st.session_state.test_results = None
             st.session_state.fitted_scaler = None
             # CRITICAL RESET: Ensure input vars are clear before new assignment
@@ -262,7 +268,7 @@ with col1:
             st.rerun()
 
     stop_button_disabled = not st.session_state.is_running
-    if st.button("🛑 STOP Training", disabled=stop_button_disabled):
+    if st.button("STOP Training", disabled=stop_button_disabled):
         if st.session_state.stop_event:
             st.session_state.log_messages.append("--- STOP signal sent! Finishing current step... ---")
             st.session_state.stop_event.set()
@@ -295,7 +301,7 @@ with col1:
         m_col1, m_col2 = st.columns(2)
         m_col1.metric("Best Loss (So Far)", f"{st.session_state.best_loss_so_far:.6f}")
 
-        # --- DOWNLOAD BEST-SO-FAR MODEL (MODIFIED) ---
+        # --- DOWNLOAD BEST-SO-FAR MODEL (MODIFIED for separate ONNX button) ---
         best_model_exists = os.path.exists(st.session_state.best_model_path)
 
         if best_model_exists:
@@ -304,38 +310,70 @@ with col1:
                     model_data = f.read()
 
                 fitted_scaler = st.session_state.get('fitted_scaler')
+                best_onnx_path = st.session_state.get('best_onnx_path')
+                intermediate_onnx_exists = best_onnx_path and os.path.exists(best_onnx_path)
 
-                if fitted_scaler and should_standardize_config:
-                    # Case 1: Standardization IS used -> Offer ZIP file
-                    scaler_json_data = save_scaler_to_json(fitted_scaler, st.session_state.dataset_input_vars)
-                    
-                    zip_buffer = io.BytesIO()
-                    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-                        zip_file.writestr('ANN_best_intermediate_model.pt', model_data)
-                        zip_file.writestr('scaler_params.json', scaler_json_data)
-                        # README.txt REMOVED AS REQUESTED
+                # Use a block of code to contain the download buttons
+                with st.expander("Download Intermediate Model"):
 
-                    m_col2.download_button(
-                        label="📥 Download Best-So-Far Model (.zip)",
-                        data=zip_buffer.getvalue(),
-                        file_name="ANN_intermediate_model.zip",
-                        mime="application/zip"
-                    )
-                else:
-                    # Case 2: No Standardization -> Offer PT file
-                    m_col2.download_button(
-                        label="📥 Download Best-So-Far Model (.pt)",
-                        data=model_data,
-                        file_name="best_intermediate.pt",
-                        mime="application/octet-stream"
-                    )
+                    if fitted_scaler and should_standardize_config:
+                        # Case 1: Standardization IS used -> Offer ZIP file (PT, JSON, ONNX)
+                        scaler_json_data = save_scaler_to_json(fitted_scaler, st.session_state.dataset_input_vars)
+                        
+                        zip_buffer = io.BytesIO()
+                        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+                            zip_file.writestr('ANN_best_intermediate_model.pt', model_data)
+                            zip_file.writestr('scaler_params.json', scaler_json_data)
+                            
+                            if intermediate_onnx_exists:
+                                with open(best_onnx_path, "rb") as f_onnx:
+                                    zip_file.writestr('ANN_best_intermediate_model.onnx', f_onnx.read())
+
+                        st.download_button(
+                            label="Download Best-So-Far Deployment (.zip)",
+                            data=zip_buffer.getvalue(),
+                            file_name="ANN_intermediate_model.zip",
+                            mime="application/zip",
+                            type="primary"
+                        )
+                    else:
+                        # Case 2: No Standardization -> Offer PT and ONNX separately
+                        # NOTE: THESE COLUMNS ARE CREATED DIRECTLY UNDER ST.COLUMNS(2) IN THE MAIN BODY,
+                        # BUT HERE THEY ARE UNDER THE EXPANDER, AVOID NESTING.
+                        dl_col_int1, dl_col_int2 = st.columns(2) 
+                        
+                        with dl_col_int1:
+                            st.download_button(
+                                label="Download PT",
+                                data=model_data,
+                                file_name="best_intermediate.pt",
+                                mime="application/octet-stream",
+                                key="dl_best_pt"
+                            )
+                        
+                        if intermediate_onnx_exists:
+                            with dl_col_int2:
+                                with open(best_onnx_path, "rb") as f_onnx:
+                                    st.download_button(
+                                        label="Download ONNX",
+                                        data=f_onnx.read(),
+                                        file_name="best_intermediate.onnx",
+                                        mime="application/octet-stream",
+                                        type="secondary",
+                                        key="dl_best_onnx"
+                                    )
+                        else:
+                            with dl_col_int2:
+                                st.info("ONNX N/A")
+                                
             except Exception as e:
-                m_col2.error(f"Error preparing model download: {e}")
-                m_col2.info("Best-so-far model will be available after the first successful trial.")
+                # Note: Changed from m_col2.error to st.error as we're outside the m_col2 context for downloads
+                st.error(f"Error preparing model download: {e}")
+                st.info("Best-so-far model will be available after the first successful trial.")
         else:
-            m_col2.info("Best-so-far model will be available after the first successful trial.")
+            st.info("Best-so-far model will be available after the first successful trial.")
 
-        st.subheader("Best Hyperparameters (So Far)")
+        st.subheader("Best Hyperparameters")
         st.json(st.session_state.best_params_so_far, expanded=False)
 
 with col2:
@@ -390,39 +428,64 @@ if st.session_state.final_model_path and uploaded_test_file:
         r_col2.metric("Test R² Score", f"{results['R2']:.4f}")
         r_col3.metric("Test Accuracy", f"{results['Accuracy']:.2f}%")
 
-        # --- DOWNLOAD FINAL MODEL (MODIFIED) ---
+        # --- DOWNLOAD FINAL MODEL (MODIFIED for separate PT/ONNX download) ---
         try:
             with open(st.session_state.final_model_path, "rb") as f:
                 final_model_data = f.read()
 
             fitted_scaler = st.session_state.get('fitted_scaler')
+            final_onnx_path = st.session_state.get('final_onnx_path')
+            onnx_exists = final_onnx_path and os.path.exists(final_onnx_path)
 
             if fitted_scaler and should_standardize_config:
-                 # Case 1: Standardization IS used -> Offer ZIP file
+                 # Case 1: Standardization IS used -> Offer ZIP deployment package
                 scaler_json_data = save_scaler_to_json(fitted_scaler, st.session_state.dataset_input_vars)
                 
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
                     zip_file.writestr('final_model.pt', final_model_data)
                     zip_file.writestr('scaler_params.json', scaler_json_data)
-                    # README.txt REMOVED AS REQUESTED
+                    
+                    # Add ONNX file
+                    if onnx_exists:
+                        with open(final_onnx_path, "rb") as f_onnx:
+                            zip_file.writestr('final_model.onnx', f_onnx.read())
 
                 st.download_button(
-                    label="🏆 Download FINAL Trained Model (.zip)",
+                    label="Download final model (.zip)",
                     data=zip_buffer.getvalue(),
-                    file_name="ANN_final_model.zip",
+                    file_name="ANN_final_deployment_package.zip",
                     mime="application/zip",
                     type="primary"
                 )
             else:
-                # Case 2: No Standardization -> Offer PT file
-                st.download_button(
-                    label="🏆 Download FINAL Trained Model (.pt)",
-                    data=final_model_data,
-                    file_name="final_model.pt",
-                    mime="application/octet-stream",
-                    type="primary"
-                )
+                # Case 2: No Standardization -> Offer PT and ONNX separately
+                dl_col1, dl_col2 = st.columns(2)
+                
+                # 1. PT Download Button (Primary)
+                with dl_col1:
+                    st.download_button(
+                        label="Download PyTorch (.pt)",
+                        data=final_model_data,
+                        file_name="final_model.pt",
+                        mime="application/octet-stream",
+                        type="primary"
+                    )
+                
+                # 2. ONNX Download Button (Secondary)
+                if onnx_exists:
+                    with dl_col2:
+                         with open(final_onnx_path, "rb") as f_onnx:
+                            st.download_button(
+                                label="Download ONNX (.onnx)",
+                                data=f_onnx.read(),
+                                file_name="final_model.onnx",
+                                mime="application/octet-stream",
+                                type="secondary"
+                            )
+                else:
+                    with dl_col2:
+                         st.info("ONNX file not available.")
 
         except Exception as e:
             st.error(f"Error preparing final model for download: {e}")

@@ -17,6 +17,7 @@ from streamlit.runtime.state import SessionStateProxy # For type hinting
 # Assuming define_net_regression is defined or imported correctly.
 # We'll use a placeholder import for the final script structure.
 from src.model import define_net_regression
+from utils.save_onnx import export_to_onnx
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -204,6 +205,15 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         torch.save(fold_model_state, save_path)
         print(f" (New Best Intermediate Model saved)")
 
+        try:
+            intermediate_onnx_path = export_to_onnx(fold_model, dataset, os.path.join("models", "ANN_best_intermediate_model"))
+            send_update(update_queue, 'best_onnx_path', intermediate_onnx_path)
+            print(f" (New Best Intermediate Model saved in PT and ONNX)")
+        except Exception as e:
+             send_update(update_queue, 'log_messages', f"❌ Failed to export intermediate ONNX model: {e}")
+             print(f" (New Best Intermediate Model saved in PT only. ONNX export failed: {e})")
+
+
     return avg_loss
 
 def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionStateProxy, stop_event: threading.Event):
@@ -216,6 +226,7 @@ def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionSt
     # Also reset the session state mirror for the UI:
     send_update(update_queue, 'best_loss_so_far', float('inf'))
     send_update(update_queue, 'best_params_so_far', {})
+    send_update(update_queue, 'best_onnx_path', None) # <-- NEW RESET
     
     # Define the callback function INSIDE optimization
     def optuna_callback(study: optuna.Study, trial: optuna.Trial):
