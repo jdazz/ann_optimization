@@ -4,8 +4,9 @@ cross_validation:
   - consume
   testing_path: data/training.parquet
   training_path: data/training.parquet
+  standardize_features: false
 display:
-  show_plot: true
+  show_plot: false
 generate_plot: false
 hyperparameter_search_space:
   batch_size:
@@ -17,7 +18,7 @@ hyperparameter_search_space:
   learning_rate:
     low: 0.0006760829753919819
     high: 0.1
-  n_samples: 30
+  n_samples: 10
   optimizer_name:
     choices:
     - Adam
@@ -28,8 +29,8 @@ network:
   activation_functions:
     choices:
     - ReLU
-    - Sigmoid
     - Tanh
+    - Sigmoid
   bias_initialization: zeros
   hidden_layers:
     low: 1

@@ -1639,7 +1639,7 @@
       "consume": 6.2
     },
     {
-      "distance": 11.8,
+      "distance": null,
       "speed": 43.0,
       "temp_inside": 22.5,
       "temp_outside": 1.0,

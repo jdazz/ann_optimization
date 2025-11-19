@@ -94,7 +94,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     learning_rate_config = hyperparams_config.get("learning_rate", {})
     batch_size_config = hyperparams_config.get("batch_size", {})
     epochs_config = hyperparams_config.get("epochs", {})
-    optimizer_config = config.get("optimizer_name", {}) # Use config directly if not in search space
+    optimizer_config = config.get("hyperparameter_search_space", {}).get("optimizer_name", {})
 
     # Define Model and Hyperparameters using Optuna trial suggestions
     try:
@@ -114,8 +114,8 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         "epochs", epochs_config.get("low", 200), epochs_config.get("high", 200)
     )
     # Correctly suggesting optimizer name using config defaults
-    optimizer_name = trial.suggest_categorical("opt", optimizer_config.get("choices", ["Adam"]))
-    
+    optimizer_name = trial.suggest_categorical("optimizer_name", optimizer_config.get("choices", ["Adam"]))
+
     data_train = dataset.full_data
     
     kfold = KFold(n_splits=kfold_splits, shuffle=True, random_state=42)
@@ -288,7 +288,7 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     # Get training settings from best_params
     batch_size = best_params['batch_size']
     learning_rate = best_params['learning_rate']
-    optimizer_name = best_params['opt']
+    optimizer_name = best_params['optimizer_name']
     epochs = best_params['epochs']
     
     # Get loss function from the config

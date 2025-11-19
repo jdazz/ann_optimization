@@ -1,4 +1,4 @@
-# FILE: ui/sidebar.py (Fixed by moving n_samples to Data Upload section)
+# FILE: ui/sidebar.py (Fixed to allow user selection of optimizers and activation functions)
 
 import streamlit as st
 import numpy as np
@@ -32,6 +32,8 @@ def render_sidebar(default_config, config_path):
         ui_config["variables"] = {"input_names": "Feature_1\nFeature_2", "output_names": "Target_1"}
     if "targets" not in ui_config:
          ui_config["targets"] = {"mre_threshold": 25}
+    if "cross_validation" not in ui_config: # Ensure this exists to hold the new key
+        ui_config["cross_validation"] = {}
 
     # ----------------------------------------------------
     # --- 1. Data Upload (Kept separate for visibility) ---
@@ -77,6 +79,17 @@ def render_sidebar(default_config, config_path):
         # --- Variables & Targets ---
         with st.expander("Variables & Targets", expanded=False): 
             var_conf = ui_config.get("variables", {})
+            cv_conf = ui_config.get("cross_validation", {})
+            
+            # --- START FIX: Standardization Checkbox ---
+            ui_config["cross_validation"]["standardize_features"] = st.checkbox(
+                "Standardize Input Features (Z-Score)",
+                value=cv_conf.get("standardize_features", True), # Default to True
+                key='standardize_data_check',
+                help="If checked, input features will be normalized to have zero mean and unit variance."
+            )
+            st.markdown("---") # Separator for visual clarity
+            # --- END FIX ---
             
             input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
             ui_config["variables"]["input_names"] = st.text_area(
@@ -102,7 +115,7 @@ def render_sidebar(default_config, config_path):
                 key='mre_thresh'
             )
 
-        # --- Cross Validation ---
+        # --- Cross Validation (k-fold remains here) ---
         with st.expander("Cross Validation", expanded=False):
             cv_conf = ui_config.get("cross_validation", {})
             ui_config["cross_validation"]["kfold"] = st.number_input(
@@ -115,6 +128,20 @@ def render_sidebar(default_config, config_path):
         # --- Network Architecture ---
         with st.expander("Network Architecture", expanded=False):
             net_conf = ui_config.get("network", {})
+            
+            # --- Multiselect for Activation Functions ---
+            all_activations = ["ReLU", "Sigmoid", "Tanh", "LeakyReLU", "ELU"]
+            current_choices = net_conf.get("activation_functions", {}).get("choices", ["ReLU", "Sigmoid", "Tanh"])
+            
+            selected_activations = st.multiselect(
+                "Activation Functions to Sample",
+                options=all_activations,
+                default=current_choices,
+                key='activation_choices',
+                help="Select which activation functions Optuna should consider for the hidden layers."
+            )
+            
+            net_conf["activation_functions"] = {"choices": selected_activations}
             
             h_layers = net_conf.get("hidden_layers", {"low": 2, "high": 4})
             hidden_layers_range = st.slider(
@@ -135,11 +162,23 @@ def render_sidebar(default_config, config_path):
             net_conf["hidden_neurons"] = {"low": hidden_neurons_range[0], "high": hidden_neurons_range[1]}
             ui_config["network"] = net_conf
 
-        # --- Hyperparameter Search (Only Ranges Remain) ---
-        with st.expander("Hyperparameter Search Ranges", expanded=False):
+        # --- Hyperparameter Search Ranges & Choices ---
+        with st.expander("Hyperparameter Search Ranges & Choices", expanded=False):
             hpo_conf = ui_config.get("hyperparameter_search_space", {})
             
-            # n_samples has been removed from here
+            # --- Multiselect for Optimizers ---
+            all_optimizers = ["Adam", "SGD", "RMSprop", "Adagrad", "AdamW", "LBFGS"]
+            current_optimizer_choices = hpo_conf.get("optimizer_name", {}).get("choices", ["Adam"])
+            
+            selected_optimizers = st.multiselect(
+                "Optimizers to Sample",
+                options=all_optimizers,
+                default=current_optimizer_choices,
+                key='optimizer_choices',
+                help="Select which optimizers Optuna should consider for training."
+            )
+            
+            hpo_conf["optimizer_name"] = {"choices": selected_optimizers, "type": "categorical"}
             
             lr = hpo_conf.get("learning_rate", {"low": 0.0001, "high": 0.01})
             current_lr_low = np.log10(lr.get("low", 0.0001))
