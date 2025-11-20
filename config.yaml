@@ -11,14 +11,14 @@ generate_plot: false
 hyperparameter_search_space:
   batch_size:
     low: 16
-    high: 246
+    high: 303
   epochs:
-    low: 10
-    high: 300
+    low: 50
+    high: 400
   learning_rate:
-    low: 0.0006760829753919819
+    low: 0.020417379446695295
     high: 0.1
-  n_samples: 10
+  n_samples: 30
   optimizer_name:
     choices:
     - Adam
@@ -48,7 +48,5 @@ targets:
   nmae_target: 0.08
   r2_target: 0.99
 variables:
-  input_names: 'distance
-
-    speed'
+  input_names: '*'
   output_names: consume

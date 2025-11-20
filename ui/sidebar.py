@@ -1,12 +1,9 @@
-# FILE: ui/sidebar.py (Fixed to allow user selection of optimizers and activation functions)
+# FILE: ui/sidebar.py
 
 import streamlit as st
 import numpy as np
 import copy
 from utils.config_utils import load_config, save_config
-
-# NOTE: The auto_save logic has been REMOVED from this file. 
-# The actual saving will happen in app.py when the "Start Training" button is clicked.
 
 def render_sidebar(default_config, config_path):
     """
@@ -32,13 +29,13 @@ def render_sidebar(default_config, config_path):
         ui_config["variables"] = {"input_names": "Feature_1\nFeature_2", "output_names": "Target_1"}
     if "targets" not in ui_config:
          ui_config["targets"] = {"mre_threshold": 25}
-    if "cross_validation" not in ui_config: # Ensure this exists to hold the new key
+    if "cross_validation" not in ui_config: 
         ui_config["cross_validation"] = {}
 
-    # ----------------------------------------------------
-    # --- 1. Data Upload (Kept separate for visibility) ---
-    # ----------------------------------------------------
-    with st.sidebar.expander("📂 Data Upload & Global Settings", expanded=True):
+    # -------------------------------------------------------------------------
+    # --- 1. Data Upload & Global Settings (OUTPUT VARIABLES MOVED HERE) ---
+    # -------------------------------------------------------------------------
+    with st.sidebar.expander("Data Upload & Global Settings", expanded=True):
         
         # --- File Uploaders ---
         st.session_state.uploaded_train_file = st.file_uploader(
@@ -54,7 +51,19 @@ def render_sidebar(default_config, config_path):
 
         st.markdown("---")
         
-        # --- Number of Trials (Moved Here) ---
+        # --- OUTPUT/TARGET VARIABLES (MOVED from Advanced Settings) ---
+        var_conf = ui_config.get("variables", {})
+        output_names_str = var_conf.get("output_names", "Target_1")
+        
+        ui_config["variables"]["output_names"] = st.text_area(
+            "Output/Target Variables (One per line)", 
+            output_names_str,
+            key='output_vars_global', # Changed key for uniqueness/clarity
+            help="The column(s) your model is intended to predict."
+        )
+        st.markdown("---")
+        
+        # --- Number of Trials ---
         hpo_conf = ui_config.get("hyperparameter_search_space", {})
         hpo_conf["n_samples"] = st.number_input(
             "Optuna Trials (n_samples)", 
@@ -71,40 +80,34 @@ def render_sidebar(default_config, config_path):
     # --- 2. Advanced Settings Menu WRAPPED IN A FORM ---
     # ----------------------------------------------------
     
-    # CRITICAL FIX: Wrap all remaining configuration widgets in a form to batch updates. 
     with st.sidebar.form(key='advanced_settings_form'): 
         
-        st.markdown("### ⚙️ Advanced Settings (HPO Ranges & Network)")
+        st.markdown("## Advanced Settings")
 
         # --- Variables & Targets ---
         with st.expander("Variables & Targets", expanded=False): 
             var_conf = ui_config.get("variables", {})
             cv_conf = ui_config.get("cross_validation", {})
             
-            # --- START FIX: Standardization Checkbox ---
+            # --- Standardization Checkbox ---
             ui_config["cross_validation"]["standardize_features"] = st.checkbox(
                 "Standardize Input Features (Z-Score)",
-                value=cv_conf.get("standardize_features", True), # Default to True
+                value=cv_conf.get("standardize_features", True),
                 key='standardize_data_check',
                 help="If checked, input features will be normalized to have zero mean and unit variance."
             )
-            st.markdown("---") # Separator for visual clarity
-            # --- END FIX ---
+            st.markdown("---")
             
+            # --- Input Variables (Remains here) ---
             input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
             ui_config["variables"]["input_names"] = st.text_area(
-                "Input/Feature Variables (One per line)", 
+                "Input/Feature Variables (One per line, use '*' for all remaining)", 
                 input_names_str,
-                key='input_vars',
+                key='input_vars_advanced', # Changed key for uniqueness/clarity
+                help="The column(s) used as inputs to the model. Use '*' to select all columns not specified as targets."
             )
             
-            output_names_str = var_conf.get("output_names", "Target_1")
-            ui_config["variables"]["output_names"] = st.text_area(
-                "Output/Target Variables (One per line)", 
-                output_names_str,
-                key='output_vars',
-            )
-            
+            # --- MRE Threshold ---
             targets_conf = ui_config.get("targets", {})
             ui_config["targets"]["mre_threshold"] = st.number_input(
                 "MRE Threshold (%)", 
@@ -211,7 +214,7 @@ def render_sidebar(default_config, config_path):
                 key='epochs_range'
             )
             hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
-            ui_config["hyperparameter_search_space"] = hpo_conf # Update config with HPO ranges
+            ui_config["hyperparameter_search_space"] = hpo_conf
 
         # --- Plot Options ---
         with st.expander("Plot Options", expanded=False):
@@ -226,7 +229,7 @@ def render_sidebar(default_config, config_path):
         st.form_submit_button("Apply Configuration", type="secondary")
 
 
-    # --- Reset Button (Only immediate action in sidebar) ---
+    # --- Reset Button ---
     st.sidebar.markdown("---")
     
     if st.sidebar.button("Reset to Defaults", help="Resets configurations to their initial values."):

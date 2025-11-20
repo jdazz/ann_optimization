@@ -196,7 +196,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         
         send_update(update_queue, 'best_loss_so_far', avg_loss)
         send_update(update_queue, 'best_params_so_far', trial.params)
-        send_update(update_queue, 'log_messages', f"🎉 New best loss: {avg_loss:.6f}. Saving intermediate model...")
+        send_update(update_queue, 'log_messages', f"New best loss: {avg_loss:.6f}. Saving intermediate model...")
         
         # Save the model state dict (this now only needs to be local/saved to disk)
         fold_model_state = fold_model.state_dict() 
@@ -210,7 +210,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
             send_update(update_queue, 'best_onnx_path', intermediate_onnx_path)
             print(f" (New Best Intermediate Model saved in PT and ONNX)")
         except Exception as e:
-             send_update(update_queue, 'log_messages', f"❌ Failed to export intermediate ONNX model: {e}")
+             send_update(update_queue, 'log_messages', f"Failed to export intermediate ONNX model: {e}")
              print(f" (New Best Intermediate Model saved in PT only. ONNX export failed: {e})")
 
 
