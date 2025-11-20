@@ -1,58 +1,72 @@
-# plot.py
+# plot.py - Fixed for Streamlit Thread Safety
 
 import matplotlib.pyplot as plt
-import math
+import numpy as np # Import numpy for safe calculations
 
-def make_plot(mre_plot, y_pred_plot, y_true_plot, save_path=None):
+def make_plot(y_pred_plot, y_true_plot):
     """
-    Generates 3 plots:
-      1. Histogram of relative test error
-      2. Predictions vs. Labels (by sample index)
-      3. Predictions vs. Labels (scatter with ±3% error lines)
+    Generates 2 plots:
+      1. Predictions vs. Labels (by sample index)
+      2. Predictions vs. Labels (scatter with ±3% error lines)
     
     Args:
-        mre_plot (list): Mean relative errors (%) for each sample
-        y_pred_plot (list): Predicted output values
-        y_true_plot (list): True output values
-        save_path (str, optional): If provided, saves the plot image to this path instead of showing it.
+        y_pred_plot (list/np.array): Predicted output values
+        y_true_plot (list/np.array): True output values
+        
+    Returns:
+        matplotlib.figure.Figure: The created Matplotlib Figure object.
     """
     print("Generating plots...")
+    
+    # 1. Convert inputs to NumPy arrays for safe calculation
+    y_true = np.array(y_true_plot)
+    y_pred = np.array(y_pred_plot)
+    
+    # CRITICAL FIX: Use plt.subplots() to create the Figure (fig) and Axes (axs) explicitly.
+    # This prevents using the global figure object.
+    fig, axs = plt.subplots(1, 2, figsize=(14, 6)) # Create a 1 row, 2 column subplot structure
 
-    plt.figure(figsize=(15, 5))
-    font = {'family': 'serif', 'color': 'darkred', 'size': 12}
+    font = {'family': 'serif', 'color': 'darkred', 'size': 14} # Adjusted font size for clarity
 
-    # Histogram of relative errors
-    plt.subplot(131)
-    plt.hist(mre_plot, bins=math.ceil(max(mre_plot)))
-    plt.title('Histogram of Relative Test Error (%)', fontdict=font)
-    plt.xlabel('Error (%)')
-    plt.ylabel('Count')
+    # --- Plot 1: Predictions vs True (sample index) ---
+    ax1 = axs[0] # Access the first Axes object
+    
+    ax1.plot(range(len(y_true)), y_pred, 'o', color='blue', alpha=0.7, label='Predictions')
+    ax1.plot(range(len(y_true)), y_true, 'o', color='red', alpha=0.5, label='Labels')
+    
+    # Set labels and title using the Axes object methods (ax.set_...)
+    ax1.set_title('Predictions vs. Labels (Sample Index)', fontdict=font)
+    ax1.set_xlabel('Sample Index')
+    ax1.set_ylabel('Output Value')
+    ax1.legend()
+    ax1.grid(True, linestyle='--', alpha=0.6)
 
-    # Predictions vs. True Labels (sample index)
-    plt.subplot(132)
-    plt.plot(range(len(y_true_plot)), y_pred_plot, 'o', color='blue', label='Predictions')
-    plt.plot(range(len(y_true_plot)), y_true_plot, 'o', color='red', alpha=0.5, label='Labels')
-    plt.title('Predictions vs. Labels', fontdict=font)
-    plt.xlabel('Sample Index')
-    plt.ylabel('Output Value')
-    plt.legend()
 
-    # Scatter plot of Predictions vs. Labels (Error visualization)
-    plt.subplot(133)
-    plt.plot(y_true_plot, y_pred_plot, 'o', color='blue', alpha=0.5, label='Predictions')
-    plt.plot(y_true_plot, y_true_plot, color='red', label='Perfect Prediction (y=x)')
-    plt.plot(y_true_plot, [i * 1.03 for i in y_true_plot], '--', color='gray', label='+3% error')
-    plt.plot(y_true_plot, [i * 0.97 for i in y_true_plot], '--', color='gray', label='-3% error')
-    plt.title('Error Plot: Predictions vs. Labels', fontdict=font)
-    plt.xlabel('True Values')
-    plt.ylabel('Predicted Values')
-    plt.legend()
+    # --- Plot 2: Predictions vs True (scatter with ±3% error lines) ---
+    ax2 = axs[1] # Access the second Axes object
+    
+    # Scatter plot
+    ax2.plot(y_true, y_pred, 'o', color='blue', alpha=0.5, label='Predictions')
+    
+    # Perfect prediction line (y=x)
+    ax2.plot(y_true, y_true, color='red', linewidth=2, label='Perfect Prediction (y=x)')
+    
+    # ±3% error lines
+    ax2.plot(y_true, y_true * 1.03, '--', color='gray', label='±3% Error Bound')
+    ax2.plot(y_true, y_true * 0.97, '--', color='gray') # No label for the second line
+    
+    # Set labels and title using the Axes object methods
+    ax2.set_title('Error Plot: Predictions vs. True', fontdict=font)
+    ax2.set_xlabel('True Values')
+    ax2.set_ylabel('Predicted Values')
+    ax2.legend()
+    ax2.grid(True, linestyle='--', alpha=0.6)
+
 
     plt.tight_layout()
 
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f"Plot saved to {save_path}")
-    else:
-        plt.show()
+    # CRITICAL FIX: Always return the figure object for st.pyplot(fig)
+    return fig
+
+# NOTE: The save_path logic was removed, as Streamlit handles display via fig.
+# If you need saving, that logic should be added back, but it's not needed for st.pyplot.
