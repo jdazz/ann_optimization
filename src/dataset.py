@@ -5,6 +5,7 @@ import numpy as np
 import yaml
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
+from sklearn.model_selection import train_test_split # <--- NEW IMPORT
 import queue # Required for type hinting/safety
 
 
@@ -21,10 +22,12 @@ class Dataset:
              return var_string
         return []
 
-    def __init__(self, source=None, config=None, update_queue=None):
+    # --- REVISED __init__ signature ---
+    def __init__(self, source=None, config=None, update_queue=None, test_split_ratio=0.0):
         """
         Loads data, handles input variable selection (* wildcard), 
         performs one-hot encoding for categorical variables, and prepares initial attributes. 
+        If test_split_ratio > 0, it performs an internal train/test split.
         Scaling is deferred to apply_scaler.
         """
         if config is None:
@@ -41,6 +44,7 @@ class Dataset:
         cv_config = config.get("cross_validation", {})
         
         self.should_standardize = cv_config.get("standardize_features", False)
+        self.random_seed = cv_config.get("random_seed", 42) # Get random seed for split
         
         raw_input_vars = data_config.get("input_names", "")
         raw_output_vars = data_config.get("output_names", "")
@@ -54,10 +58,7 @@ class Dataset:
         self.name = None
         self.dataset = None 
 
-        # --- Loading Logic (REVISED to load ALL potential columns) ---
-        
-        # The code to load the DataFrame `df` from source is consolidated here 
-        # (It must happen before we can check for '*' inputs)
+        # --- Loading Logic (existing code) ---
         df = None
         
         if isinstance(source, pd.DataFrame):
@@ -127,7 +128,7 @@ class Dataset:
         # --- End of Loading and Selection ---
 
 
-        # --- 💥 ONE-HOT ENCODING IMPLEMENTATION 💥 ---
+        # --- 💥 ONE-HOT ENCODING IMPLEMENTATION (existing code) 💥 ---
         
         # Identify columns that are object type among the current input variables
         categorical_cols = self.dataset[input_vars_raw].select_dtypes(include=['object', 'category']).columns.tolist()
@@ -150,7 +151,7 @@ class Dataset:
         # --- END ONE-HOT ENCODING ---
         
         
-        # --- Check for missing values (REVISED TO DROP ROWS AND LOG) ---
+        # --- Check for missing values (existing code) ---
         initial_rows = len(self.dataset)
         
         # Use only the columns that are now included in the final dataset (inputs + outputs)
@@ -172,16 +173,47 @@ class Dataset:
             log_to_queue(error_message)
             raise ValueError(error_message)
 
-        # --- Extract numpy arrays ---
+        # --- Extract numpy arrays (before split, as input_df is needed for scaler) ---
         
         # Store initial unscaled inputs as a DataFrame (for easy scaling later)
         self.input_df = self.dataset[self.input_vars].copy()
         
-        # Initial numpy arrays (unscaled inputs, scaled outputs)
-        self.input_data = self.input_df.to_numpy(dtype="float32")
-        self.output_data = self.dataset[self.output_vars].to_numpy(dtype="float32")
-        
         # Initial full data (unscaled)
+        full_input_data = self.input_df.to_numpy(dtype="float32")
+        full_output_data = self.dataset[self.output_vars].to_numpy(dtype="float32")
+
+        # --- 💥 TRAIN/TEST SPLIT IMPLEMENTATION 💥 ---
+
+        if test_split_ratio > 0.0 and test_split_ratio < 1.0:
+            log_to_queue(f"Performing Train/Test split: Test Ratio={test_split_ratio:.2f} (Random Seed={self.random_seed}).")
+            
+            # Split features (X) and targets (y)
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                full_input_data, 
+                full_output_data, 
+                test_size=test_split_ratio, 
+                random_state=self.random_seed
+            )
+            
+            log_to_queue(f"Train samples: {len(self.X_train)}, Test samples: {len(self.X_test)}")
+            
+            # For the main training pipeline, the primary data arrays refer to the training subset
+            self.input_data = self.X_train
+            self.output_data = self.y_train
+            
+        else:
+            # No split needed (either separate files were used, or this is the test file)
+            self.X_train = full_input_data
+            self.y_train = full_output_data
+            self.X_test = None # Test data is expected to be loaded separately or is not applicable
+            self.y_test = None
+            
+            # For the main training pipeline, the primary data arrays refer to the full loaded data
+            self.input_data = full_input_data
+            self.output_data = full_output_data
+        
+        # --- END TRAIN/TEST SPLIT ---
+        
         self.full_data = np.concatenate([self.input_data, self.output_data], axis=1)
         self.n_input_params = len(self.input_vars)
         self.n_output_params = len(self.output_vars)
@@ -191,10 +223,9 @@ class Dataset:
 
 
     def apply_scaler(self, scaler=None, is_fitting=False):
-        """
-        Applies a fitted StandardScaler to the input features.
-        If is_fitting=True, the method performs fit_transform and saves the scaler.
-        """
+        # ... (existing apply_scaler method remains the same, but it should be noted
+        # that it only scales self.input_data, which is now the training set (X_train) 
+        # if a split was performed, or the full loaded data otherwise.)
         
         def log_to_queue(message):
             if self.update_queue:
@@ -209,13 +240,16 @@ class Dataset:
             if scaler is None:
                 scaler = StandardScaler()
             
-            input_scaled = scaler.fit_transform(self.input_df)
+            # We fit only on the portion of the DataFrame corresponding to the training data
+            input_data_to_fit = self.input_df.loc[self.input_df.index[:len(self.input_data)]].to_numpy()
+            
+            input_scaled = scaler.fit_transform(input_data_to_fit)
             self.scaler = scaler # Save the fitted scaler
             log_to_queue("Features standardized successfully (Fitted and Transformed).")
             
         elif scaler is not None:
             # For TESTING data: Only transform using the provided (fitted) scaler
-            input_scaled = scaler.transform(self.input_df)
+            input_scaled = scaler.transform(self.input_data)
             self.scaler = scaler
             log_to_queue("Features standardized successfully (Transformed using provided scaler).")
             

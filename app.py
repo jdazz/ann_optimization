@@ -1,4 +1,4 @@
-# app.py - REVISED FOR PERSISTING INTERMEDIATE RESULTS AFTER MANUAL STOP
+# FILE: app.py - REVISED WITH TWO-DATASET STRUCTURE FOR BOTH MODES
 
 import streamlit as st
 import pandas as pd
@@ -75,7 +75,11 @@ def initialize_session_state():
         st.session_state.stop_event = None
     if "training_thread" not in st.session_state:
         st.session_state.training_thread = None
-    # END THREAD PERSISTENCE KEYS
+
+    
+    # Store the split ratio (e.g., 0.8 for train, 0.2 for test)
+    if "test_split_ratio" not in st.session_state:
+        st.session_state.test_split_ratio = 0.2
 
     if "log_messages" not in st.session_state:
         st.session_state.log_messages = deque(maxlen=200)
@@ -121,6 +125,10 @@ def initialize_session_state():
     if "was_stopped_manually" not in st.session_state:
         st.session_state.was_stopped_manually = False
 
+    # --- NEW: Storage for the Test DataFrame (when split occurs) ---
+    if "test_dataset_df" not in st.session_state:
+        st.session_state.test_dataset_df = None
+
 
 # --- 2. Queue Processor ---
 
@@ -153,6 +161,7 @@ def process_queue_updates():
 
     return updates_processed > 0
 
+
 # ----------------------------------------------------------------------------------
 ## 3. Main App Execution
 # ----------------------------------------------------------------------------------
@@ -180,8 +189,45 @@ elif st.session_state.training_thread and not st.session_state.training_thread.i
 # --- 4. Sidebar Integration ---
 render_sidebar(DEFAULT_CONFIG, CONFIG_PATH)
 
+# Retrieve the uploaded files from session state
 uploaded_train_file = st.session_state.get('uploaded_train_file')
 uploaded_test_file = st.session_state.get('uploaded_test_file')
+
+# --- Retrieve the user-set test split ratio from the UI config ---
+user_set_split_ratio = st.session_state.current_ui_config.get("cross_validation", {}).get("test_split_ratio", 0.2)
+# -----------------------------------------------------------------
+
+# --- Data Input Mode Detection ---
+
+if uploaded_train_file is not None and uploaded_test_file is not None:
+    # Mode 1: Both files provided
+    st.session_state.data_split_mode = "separate_files"
+    st.session_state.test_split_ratio = 0.0 # No split needed
+
+elif uploaded_train_file is not None and uploaded_test_file is None:
+    # Mode 2: Only Training file provided -> Requires splitting
+    st.session_state.data_split_mode = "single_file"
+    
+    # --- USE USER-SET SPLIT RATIO ---
+    st.session_state.test_split_ratio = user_set_split_ratio
+    
+    st.warning(
+        f"⚠️ Detected: Single File. Data will be automatically split: "
+        f"**Train {1 - st.session_state.test_split_ratio:.0%} / Test {st.session_state.test_split_ratio:.0%}**."
+    )
+
+else:
+    # Mode 3: No files or only test file (invalid)
+    st.session_state.data_split_mode = "none"
+    st.session_state.test_split_ratio = 0.0
+# --- End Detection Logic ---
+
+
+# Now, update the start button logic:
+# Start button is enabled only if the mode is not "none" AND we are not running.
+is_data_ready = st.session_state.data_split_mode != "none"
+
+start_button_disabled = st.session_state.is_running or not is_data_ready
 
 # --- 5. Main Panel: Control and Live Status ---
 
@@ -204,6 +250,7 @@ with col1:
 
             latest_ui_config = st.session_state.current_ui_config
             try:
+                # Save the current UI configuration, including the test_split_ratio, back to the config file
                 save_config(latest_ui_config, CONFIG_PATH)
                 st.session_state.config = load_config(CONFIG_PATH)
 
@@ -225,6 +272,7 @@ with col1:
             train_path = f"temp_data/train_data.{uploaded_train_file.name.split('.')[-1]}"
             test_path = f"temp_data/test_data.{uploaded_test_file.name.split('.')[-1]}" if uploaded_test_file else None
 
+            # IMPORTANT: Save files to disk first, as Dataset uses paths for initial loading
             with open(train_path, "wb") as f: f.write(uploaded_train_file.getvalue())
             if uploaded_test_file:
                 with open(test_path, "wb") as f: f.write(uploaded_test_file.getvalue())
@@ -241,14 +289,60 @@ with col1:
             st.session_state.fitted_scaler = None
             st.session_state.optuna_study = None
             st.session_state.dataset_input_vars = []
-            st.session_state.was_stopped_manually = False # Reset manual stop flag
+            st.session_state.was_stopped_manually = False 
+            st.session_state.test_dataset_df = None # Clear previous split data
             # ------------------------------------
 
-            # --- SCALING LOGIC ---
-            dataset_train = Dataset(
-                source=train_path,
-                config=st.session_state.config,
-                update_queue=st.session_state.update_queue)
+            # --- DATASET INITIALIZATION LOGIC (REVISED) ---
+            
+            dataset_train = None
+            split_ratio_to_use = st.session_state.test_split_ratio 
+
+            if st.session_state.data_split_mode == "single_file":
+                st.session_state.log_messages.append("Loading and splitting single file...")
+                
+                # 1. Load the file and perform the split
+                temp_dataset = Dataset(
+                    source=train_path, 
+                    config=st.session_state.config,
+                    update_queue=st.session_state.update_queue,
+                    test_split_ratio=split_ratio_to_use
+                )
+                
+                # 2. Recombine split arrays into DataFrames to preserve column names
+                cols = temp_dataset.input_vars + temp_dataset.output_vars
+                
+                # Training DataFrame
+                train_arr = np.concatenate([temp_dataset.X_train, temp_dataset.y_train], axis=1)
+                train_df = pd.DataFrame(train_arr, columns=cols)
+                
+                # Test DataFrame (Stored for Section 6 Evaluation)
+                test_arr = np.concatenate([temp_dataset.X_test, temp_dataset.y_test], axis=1)
+                test_df = pd.DataFrame(test_arr, columns=cols)
+                
+                # 3. Store the test DataFrame in session state
+                st.session_state.test_dataset_df = test_df
+                
+                # 4. Create the final training Dataset object from the training DataFrame
+                # IMPORTANT: Use the DataFrame as source, and set split_ratio=0.0 (already split)
+                dataset_train = Dataset(
+                    source=train_df, 
+                    config=st.session_state.config,
+                    update_queue=st.session_state.update_queue,
+                    test_split_ratio=0.0 
+                )
+                
+            else:
+                st.session_state.log_messages.append("Loading separate training file.")
+                # Case 2: Separate Files -> Standard Load from path
+                dataset_train = Dataset(
+                    source=train_path,
+                    config=st.session_state.config,
+                    update_queue=st.session_state.update_queue,
+                    test_split_ratio=0.0 # No split needed
+                )
+            
+            # --- END DATASET INITIALIZATION LOGIC ---
             
             st.session_state.dataset_input_vars = dataset_train.input_vars
 
@@ -415,39 +509,64 @@ with col2:
         log_text = "\n".join(list(st.session_state.log_messages)[::-1])
         log_container.text_area("Logs", value=log_text, height=400, disabled=True)
 # ----------------------------------------------------------------------------------
-## 6. Final Results Section
+## 6. Final Results Section (REVISED)
 # ----------------------------------------------------------------------------------
 
 st.divider()
 st.header("Final Results")
 
-# --- MODIFIED: The Final Results section requires the FINAL model path ---
-if st.session_state.final_model_path and uploaded_test_file:
-    # ... (Rest of Section 6 logic remains the same, as it only runs after full HPO completion or final export)
+# The final results section needs the FINAL model path AND the test data source (either file path or split DataFrame)
+if st.session_state.final_model_path and st.session_state.data_split_mode != "none":
     
     if not st.session_state.test_results:
         if not st.session_state.is_running:
             st.session_state.log_messages.append("Running evaluation on test set...")
             try:
-                test_path = f"temp_data/test_data.{uploaded_test_file.name.split('.')[-1]}"
-
-                dataset_test = Dataset(
-                            source=test_path,
+                dataset_test = None
+                
+                if st.session_state.data_split_mode == "single_file":
+                    # Case 1: Load the test DataFrame stored during training start
+                    test_df = st.session_state.get('test_dataset_df')
+                    
+                    if test_df is not None and not test_df.empty:
+                        st.session_state.log_messages.append("Creating test dataset from split DataFrame.")
+                        dataset_test = Dataset(
+                            source=test_df, # Pass the DataFrame directly
                             config=st.session_state.config,
-                            update_queue=st.session_state.update_queue
+                            update_queue=st.session_state.update_queue,
+                            test_split_ratio=0.0 # Already split
                         )
-                fitted_scaler = st.session_state.fitted_scaler
+                    else:
+                        st.error("Error: Single file mode active but split test data (DataFrame) not found in state.")
+                        raise ValueError("Test data missing after single-file split.")
+                
+                elif st.session_state.data_split_mode == "separate_files":
+                    # Case 2: Load the test file from path
+                    test_file_name = st.session_state.uploaded_test_file.name
+                    test_path = f"temp_data/test_data.{test_file_name.split('.')[-1]}"
+                    
+                    st.session_state.log_messages.append(f"Creating test dataset from file: {test_path}")
+                    dataset_test = Dataset(
+                        source=test_path,
+                        config=st.session_state.config,
+                        update_queue=st.session_state.update_queue,
+                        test_split_ratio=0.0
+                    )
 
-                if fitted_scaler is not None:
-                    dataset_test.apply_scaler(scaler=fitted_scaler, is_fitting=False)
+                
+                if dataset_test:
+                    fitted_scaler = st.session_state.fitted_scaler
 
-                test_metrics = test(
-                    dataset_test,
-                    st.session_state.final_model_path,
-                    st.session_state.best_params_so_far
-                )
-                st.session_state.test_results = test_metrics
-                st.rerun()
+                    if fitted_scaler is not None:
+                        dataset_test.apply_scaler(scaler=fitted_scaler, is_fitting=False)
+
+                    test_metrics = test(
+                        dataset_test,
+                        st.session_state.final_model_path,
+                        st.session_state.best_params_so_far
+                    )
+                    st.session_state.test_results = test_metrics
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"Failed to run test: {e}")
@@ -563,7 +682,7 @@ elif st.session_state.was_stopped_manually and best_model_exists:
 elif st.session_state.is_running:
     st.info("Waiting for training to complete to display final results...")
 else:
-    st.warning("Upload a test file and run training to see final results.")
+    st.warning("Upload a training file and run training to see final results.")
 
 
 # ----------------------------------------------------------------------------------

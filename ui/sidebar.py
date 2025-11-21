@@ -32,6 +32,9 @@ def render_sidebar(default_config, config_path):
     if "cross_validation" not in ui_config: 
         ui_config["cross_validation"] = {}
     
+    # Ensure test_split_ratio has a default value if missing from config
+    ui_config["cross_validation"]["test_split_ratio"] = ui_config["cross_validation"].get("test_split_ratio", 0.2)
+    
     # Initialize 'display' section for plot toggles
     if "display" not in ui_config:
         ui_config["display"] = {}
@@ -47,12 +50,12 @@ def render_sidebar(default_config, config_path):
         
         # --- File Uploaders ---
         st.session_state.uploaded_train_file = st.file_uploader(
-            "Upload Training Data (CSV, JSON, etc.)", 
+            "Upload Training Data (CSV, JSON, etc.) **:red[*]**", 
             type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
             key='train_uploader'
         )
         st.session_state.uploaded_test_file = st.file_uploader(
-            "Upload Testing Data (CSV, JSON, etc.)", 
+            "Upload Testing Data (CSV, JSON, etc.) *(Optional)*", 
             type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
             key='test_uploader'
         )
@@ -126,14 +129,32 @@ def render_sidebar(default_config, config_path):
                 key='mre_thresh'
             )
 
-        # --- Cross Validation (k-fold remains here) ---
-        with st.expander("Cross Validation", expanded=False):
+        # --- Cross Validation (k-fold and test_split_ratio) ---
+        with st.expander("Cross Validation", expanded=True): # Expanded for visibility
             cv_conf = ui_config.get("cross_validation", {})
+            
+            # --- K-Fold Splits ---
             ui_config["cross_validation"]["kfold"] = st.number_input(
                 "K-Fold Splits", 
                 min_value=2, 
                 value=cv_conf.get("kfold", 5),
                 key='kfold_splits'
+            )
+
+            st.markdown("---")
+            
+            # --- Test Split Ratio (NEW WIDGET) ---
+            current_ratio = cv_conf.get("test_split_ratio", 0.2)
+            
+            ui_config["cross_validation"]["test_split_ratio"] = st.slider(
+                "Single File Train/Test Split Ratio (Test %)",
+                min_value=0.05, 
+                max_value=0.5, 
+                value=float(current_ratio),
+                step=0.05,
+                format="%.2f",
+                key='test_split_ratio_slider',
+                help="If only one data file is uploaded, this percentage is reserved for the Test Set."
             )
         
         # --- Network Architecture ---
