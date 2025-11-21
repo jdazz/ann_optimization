@@ -31,6 +31,14 @@ def render_sidebar(default_config, config_path):
          ui_config["targets"] = {"mre_threshold": 25}
     if "cross_validation" not in ui_config: 
         ui_config["cross_validation"] = {}
+    
+    # Initialize 'display' section for plot toggles
+    if "display" not in ui_config:
+        ui_config["display"] = {}
+    # Ensure default values are set for the new keys if they are missing
+    ui_config["display"]["show_prediction_plot"] = ui_config["display"].get("show_prediction_plot", True)
+    ui_config["display"]["show_optuna_plots"] = ui_config["display"].get("show_optuna_plots", True)
+
 
     # -------------------------------------------------------------------------
     # --- 1. Data Upload & Global Settings (OUTPUT VARIABLES MOVED HERE) ---
@@ -216,13 +224,23 @@ def render_sidebar(default_config, config_path):
             hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
             ui_config["hyperparameter_search_space"] = hpo_conf
 
-        # --- Plot Options ---
+        # --- Plot Options (REVISED SECTION) ---
         with st.expander("Plot Options", expanded=False):
-            ui_config["display"] = ui_config.get("display", {})
-            ui_config["display"]["show_plot"] = st.checkbox(
-                "Show Prediction Plot After Training",
-                value=ui_config["display"].get("show_plot", True),
-                key='show_plot_check', 
+            
+            # Checkbox for Prediction Plot
+            ui_config["display"]["show_prediction_plot"] = st.checkbox(
+                "Show Predictions vs. Actual Plot (Parity Plot)",
+                value=ui_config["display"].get("show_prediction_plot", True),
+                key='show_prediction_plot_check', 
+                help="Displays the final model's performance on the test set."
+            )
+            
+            # Checkbox for Optuna Plots
+            ui_config["display"]["show_optuna_plots"] = st.checkbox(
+                "Show Optuna Optimization History & Analysis Plots",
+                value=ui_config["display"].get("show_optuna_plots", True),
+                key='show_optuna_plots_check',
+                help="Displays interactive plots showing the HPO progress and parameter importance."
             )
         
         # Add a submit button to the form. 

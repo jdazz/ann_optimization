@@ -277,12 +277,12 @@ def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionSt
     if stop_event.is_set():
         send_update(update_queue, 'log_messages', "Optimization was stopped.")
         if study.best_trial:
-            return study.best_trial.params
+            return study.best_trial.params, study
         else:
-            return None
+            return None, None
 
     send_update(update_queue, 'log_messages', "Optimization finished.")
-    return study.best_params
+    return study.best_params, study
 
 def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config):
     # ... (function body remains the same) ...

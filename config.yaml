@@ -7,6 +7,8 @@ cross_validation:
   standardize_features: false
 display:
   show_plot: false
+  show_prediction_plot: true
+  show_optuna_plots: true
 generate_plot: false
 hyperparameter_search_space:
   batch_size:
@@ -18,7 +20,7 @@ hyperparameter_search_space:
   learning_rate:
     low: 0.020417379446695295
     high: 0.1
-  n_samples: 30
+  n_samples: 10
   optimizer_name:
     choices:
     - Adam
