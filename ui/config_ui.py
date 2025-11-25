@@ -1,30 +1,34 @@
-# FILE: ui/sidebar.py
+# FILE: ui/config_ui.py (Form structure REMOVED for immediate updates)
 
 import streamlit as st
 import numpy as np
 import copy
 from utils.config_utils import load_config, save_config
 
-def render_sidebar(default_config, config_path):
+def render_config_ui(default_config, config_path):
     """
-    Renders the configuration sidebar.
-    Configuration changes are collected and stored in st.session_state.current_ui_config.
-    The main app (app.py) is responsible for saving the config when training starts.
+    Renders the configuration widgets on the main page, split into two columns.
+    Configuration changes are collected and stored in st.session_state.current_ui_config
+    IMMEDIATELY upon user interaction (no form submission needed).
     """
-    st.sidebar.title("Model Configuration")
-    st.sidebar.info("Adjust parameters below. **Advanced Settings** changes are batched until 'Start Training' is clicked.")
+    # -------------------------------------------------------------------------
+    # --- UI Layout: Header and Info ---
+    # -------------------------------------------------------------------------
+    st.markdown("## ⚙️ Model Configuration")
+    # Updated info: Removed reference to 'Apply Configuration'
+    st.info("Adjust parameters below. All settings update automatically upon change.") 
     st.set_option('deprecation.showPyplotGlobalUse', False)
 
+    # Load config and handle error
     try:
         current_config = load_config(config_path)
     except FileNotFoundError:
-        st.sidebar.error(f"Error: config.yaml not found.")
+        st.error(f"Error: config.yaml not found.")
         st.stop()
 
-    # Create a deepcopy to be populated by the Streamlit widgets
     ui_config = copy.deepcopy(current_config)
 
-    # Initialize new sections if they don't exist
+    # Initialize new sections if they don't exist (same as before)
     if "variables" not in ui_config:
         ui_config["variables"] = {"input_names": "Feature_1\nFeature_2", "output_names": "Target_1"}
     if "targets" not in ui_config:
@@ -32,75 +36,77 @@ def render_sidebar(default_config, config_path):
     if "cross_validation" not in ui_config: 
         ui_config["cross_validation"] = {}
     
-    # Ensure test_split_ratio has a default value if missing from config
     ui_config["cross_validation"]["test_split_ratio"] = ui_config["cross_validation"].get("test_split_ratio", 0.2)
     
-    # Initialize 'display' section for plot toggles
     if "display" not in ui_config:
         ui_config["display"] = {}
-    # Ensure default values are set for the new keys if they are missing
     ui_config["display"]["show_prediction_plot"] = ui_config["display"].get("show_prediction_plot", True)
     ui_config["display"]["show_optuna_plots"] = ui_config["display"].get("show_optuna_plots", True)
-
-
-    # -------------------------------------------------------------------------
-    # --- 1. Data Upload & Global Settings (OUTPUT VARIABLES MOVED HERE) ---
-    # -------------------------------------------------------------------------
-    with st.sidebar.expander("Data Upload & Global Settings", expanded=True):
-        
-        # --- File Uploaders ---
-        st.session_state.uploaded_train_file = st.file_uploader(
-            "Upload Training Data (CSV, JSON, etc.) **:red[*]**", 
-            type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
-            key='train_uploader'
-        )
-        st.session_state.uploaded_test_file = st.file_uploader(
-            "Upload Testing Data (CSV, JSON, etc.) *(Optional)*", 
-            type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
-            key='test_uploader'
-        )
-
-        st.markdown("---")
-        
-        # --- OUTPUT/TARGET VARIABLES (MOVED from Advanced Settings) ---
-        var_conf = ui_config.get("variables", {})
-        output_names_str = var_conf.get("output_names", "Target_1")
-        
-        ui_config["variables"]["output_names"] = st.text_area(
-            "Output/Target Variables (One per line)", 
-            output_names_str,
-            key='output_vars_global', # Changed key for uniqueness/clarity
-            help="The column(s) your model is intended to predict."
-        )
-        st.markdown("---")
-        
-        # --- Number of Trials ---
-        hpo_conf = ui_config.get("hyperparameter_search_space", {})
-        hpo_conf["n_samples"] = st.number_input(
-            "Optuna Trials (n_samples)", 
-            min_value=1, 
-            value=hpo_conf.get("n_samples", 50),
-            key='n_samples_hpo',
-            help="The number of optimization trials to run during Hyperparameter Search."
-        )
-        # Ensure the updated hpo_conf is written back to ui_config 
-        ui_config["hyperparameter_search_space"] = hpo_conf
-
-
-    # ----------------------------------------------------
-    # --- 2. Advanced Settings Menu WRAPPED IN A FORM ---
-    # ----------------------------------------------------
     
-    with st.sidebar.form(key='advanced_settings_form'): 
+    # -------------------------------------------------------------------------
+    # --- Create Two Columns for Main Content ---
+    # -------------------------------------------------------------------------
+    col_left, col_right = st.columns(2)
+
+    # =========================================================================
+    # --- COLUMN 1 (LEFT): Data Upload & Global Settings (UNCHANGED) ---
+    # =========================================================================
+    with col_left:
+        with st.expander("Data Upload & Global Settings", expanded=True):
+            
+            # --- File Uploaders ---
+            st.session_state.uploaded_train_file = st.file_uploader(
+                "Upload Training Data (CSV, JSON, etc.) **:red[*]**", 
+                type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
+                key='train_uploader'
+            )
+            st.session_state.uploaded_test_file = st.file_uploader(
+                "Upload Testing Data (CSV, JSON, etc.) *(Optional)*", 
+                type=['csv', 'json', 'xls', 'xlsx', 'parquet'],
+                key='test_uploader'
+            )
+
+            st.markdown("---")
+            
+            # --- OUTPUT/TARGET VARIABLES ---
+            var_conf = ui_config.get("variables", {})
+            output_names_str = var_conf.get("output_names", "Target_1")
+            
+            ui_config["variables"]["output_names"] = st.text_area(
+                "Output/Target Variables (One per line)", 
+                output_names_str,
+                key='output_vars_global', 
+                help="The column(s) your model is intended to predict."
+            )
+            st.markdown("---")
+            
+            # --- Number of Trials ---
+            hpo_conf = ui_config.get("hyperparameter_search_space", {})
+            hpo_conf["n_samples"] = st.number_input(
+                "Optuna Trials (n_samples)", 
+                min_value=1, 
+                value=hpo_conf.get("n_samples", 50),
+                key='n_samples_hpo',
+                help="The number of optimization trials to run during Hyperparameter Search."
+            )
+            ui_config["hyperparameter_search_space"] = hpo_conf
+    
+    
+    # =========================================================================
+    # --- COLUMN 2 (RIGHT): Advanced Settings Menu (FORM REMOVED) ---
+    # =========================================================================
+    with col_right:
         
-        st.markdown("## Advanced Settings")
+        # NOTE: Form structure removed. All widgets update immediately.
+        
+        st.markdown("### Advanced Settings")
 
         # --- Variables & Targets ---
         with st.expander("Variables & Targets", expanded=False): 
             var_conf = ui_config.get("variables", {})
             cv_conf = ui_config.get("cross_validation", {})
             
-            # --- Standardization Checkbox ---
+            # Standardization Checkbox
             ui_config["cross_validation"]["standardize_features"] = st.checkbox(
                 "Standardize Input Features (Z-Score)",
                 value=cv_conf.get("standardize_features", True),
@@ -109,16 +115,16 @@ def render_sidebar(default_config, config_path):
             )
             st.markdown("---")
             
-            # --- Input Variables (Remains here) ---
+            # Input Variables
             input_names_str = var_conf.get("input_names", "Feature_1\nFeature_2")
             ui_config["variables"]["input_names"] = st.text_area(
                 "Input/Feature Variables (One per line, use '*' for all remaining)", 
                 input_names_str,
-                key='input_vars_advanced', # Changed key for uniqueness/clarity
+                key='input_vars_advanced', 
                 help="The column(s) used as inputs to the model. Use '*' to select all columns not specified as targets."
             )
             
-            # --- MRE Threshold ---
+            # MRE Threshold
             targets_conf = ui_config.get("targets", {})
             ui_config["targets"]["mre_threshold"] = st.number_input(
                 "MRE Threshold (%)", 
@@ -130,10 +136,10 @@ def render_sidebar(default_config, config_path):
             )
 
         # --- Cross Validation (k-fold and test_split_ratio) ---
-        with st.expander("Cross Validation", expanded=True): # Expanded for visibility
+        with st.expander("Cross Validation", expanded=False):
             cv_conf = ui_config.get("cross_validation", {})
             
-            # --- K-Fold Splits ---
+            # K-Fold Splits
             ui_config["cross_validation"]["kfold"] = st.number_input(
                 "K-Fold Splits", 
                 min_value=2, 
@@ -143,7 +149,7 @@ def render_sidebar(default_config, config_path):
 
             st.markdown("---")
             
-            # --- Test Split Ratio (NEW WIDGET) ---
+            # Test Split Ratio
             current_ratio = cv_conf.get("test_split_ratio", 0.2)
             
             ui_config["cross_validation"]["test_split_ratio"] = st.slider(
@@ -161,7 +167,7 @@ def render_sidebar(default_config, config_path):
         with st.expander("Network Architecture", expanded=False):
             net_conf = ui_config.get("network", {})
             
-            # --- Multiselect for Activation Functions ---
+            # Multiselect for Activation Functions
             all_activations = ["ReLU", "Sigmoid", "Tanh", "LeakyReLU", "ELU"]
             current_choices = net_conf.get("activation_functions", {}).get("choices", ["ReLU", "Sigmoid", "Tanh"])
             
@@ -198,7 +204,7 @@ def render_sidebar(default_config, config_path):
         with st.expander("Hyperparameter Search Ranges & Choices", expanded=False):
             hpo_conf = ui_config.get("hyperparameter_search_space", {})
             
-            # --- Multiselect for Optimizers ---
+            # Multiselect for Optimizers
             all_optimizers = ["Adam", "SGD", "RMSprop", "Adagrad", "AdamW", "LBFGS"]
             current_optimizer_choices = hpo_conf.get("optimizer_name", {}).get("choices", ["Adam"])
             
@@ -245,39 +251,13 @@ def render_sidebar(default_config, config_path):
             hpo_conf["epochs"] = {"low": epochs_low, "high": epochs_high}
             ui_config["hyperparameter_search_space"] = hpo_conf
 
-        # --- Plot Options (REVISED SECTION) ---
-        with st.expander("Plot Options", expanded=False):
-            
-            # Checkbox for Prediction Plot
-            ui_config["display"]["show_prediction_plot"] = st.checkbox(
-                "Show Predictions vs. Actual Plot (Parity Plot)",
-                value=ui_config["display"].get("show_prediction_plot", True),
-                key='show_prediction_plot_check', 
-                help="Displays the final model's performance on the test set."
-            )
-            
-            # Checkbox for Optuna Plots
-            ui_config["display"]["show_optuna_plots"] = st.checkbox(
-                "Show Optuna Optimization History & Analysis Plots",
-                value=ui_config["display"].get("show_optuna_plots", True),
-                key='show_optuna_plots_check',
-                help="Displays interactive plots showing the HPO progress and parameter importance."
-            )
         
-        # Add a submit button to the form. 
-        st.form_submit_button("Apply Configuration", type="secondary")
 
 
-    # --- Reset Button ---
-    st.sidebar.markdown("---")
-    
-    if st.sidebar.button("Reset to Defaults", help="Resets configurations to their initial values."):
-        try:
-            save_config(default_config, config_path)
-            st.sidebar.success("Config reset to defaults.")
-            st.rerun() 
-        except Exception as e:
-            st.sidebar.error(f"Error resetting config: {e}")
+    # -------------------------------------------------------------------------
+    # --- Reset Button (Placed below columns for full-width visibility) ---
+    # -------------------------------------------------------------------------
+   
 
     # Store the latest UI configuration into session state for the main app to access
     st.session_state.current_ui_config = ui_config

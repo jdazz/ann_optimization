@@ -18,6 +18,7 @@ from streamlit.runtime.state import SessionStateProxy # For type hinting
 # We'll use a placeholder import for the final script structure.
 from src.model import define_net_regression
 from utils.save_onnx import export_to_onnx
+from src.model_test import test
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -193,7 +194,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     if avg_loss < current_best_loss:
         # Update BEST_LOSS logic must now use the queue to tell the UI
         # and rely on Optuna's internal study.best_value/best_trial
-        
+
         send_update(update_queue, 'best_loss_so_far', avg_loss)
         send_update(update_queue, 'best_params_so_far', trial.params)
         send_update(update_queue, 'log_messages', f"New best loss: {avg_loss:.6f}. Saving intermediate model...")

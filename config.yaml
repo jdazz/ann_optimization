@@ -21,7 +21,7 @@ hyperparameter_search_space:
   learning_rate:
     low: 0.015848931924611134
     high: 0.1
-  n_samples: 500
+  n_samples: 10
   optimizer_name:
     choices:
     - Adam
@@ -36,11 +36,11 @@ network:
     - Sigmoid
   bias_initialization: zeros
   hidden_layers:
-    low: 2
-    high: 8
+    low: 3
+    high: 5
   hidden_neurons:
-    low: 32
-    high: 200
+    low: 16
+    high: 68
   weight_initialization: xavier_uniform
 sampler:
   type: TPESampler
@@ -52,4 +52,4 @@ targets:
   r2_target: 0.99
 variables:
   input_names: '*'
-  output_names: Y:Titer
+  output_names: consume
