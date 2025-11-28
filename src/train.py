@@ -16,9 +16,10 @@ from streamlit.runtime.state import SessionStateProxy # For type hinting
 
 # Assuming define_net_regression is defined or imported correctly.
 # We'll use a placeholder import for the final script structure.
+from src.dataset import Dataset
 from src.model import define_net_regression
 from utils.save_onnx import export_to_onnx
-from src.model_test import test
+from src.model_test import test as test_model
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,62 +72,83 @@ def get_loss_function(config):
 
 
 # --- CRITICAL FIX 1: Simplify and unify the crossvalidation signature ---
-def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Queue, stop_event: threading.Event):
+def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Queue, stop_event: threading.Event, dataset_test):
     """
     Optuna objective function.
-    Performs K-Fold CV, saves the best model found so far, and returns the average validation loss.
-    
-    Arguments are ordered to match the objective lambda.
+    Performs K-Fold cross validation, saves the best model found so far, and returns
+    the average validation loss for the trial.
+
+    - The objective (what Optuna minimizes) is the average validation loss.
+    - When a new best trial is found (by this loss), we:
+        * Retrain the model on the full training data using train_final_model.
+        * Save the intermediate best model (PT and optional ONNX).
+        * Evaluate that model on the provided dataset_test via model_test.test,
+          and send test metrics to the UI via update_queue.
+
+    Arguments order matches the objective lambda from optimization().
     """
     global BEST_MODEL_STATE, BEST_LOSS, TRIALS_DONE
     TRIALS_DONE += 1
-    
+
     print(f"\nTrial {trial.number}: ", end="")
-    
-    # Get parameters from dataset object (simplifies signature)
+
+    # -------------------------------------------------------------------------
+    # 1. Basic setup
+    # -------------------------------------------------------------------------
     n_input_params = dataset.n_input_params
     n_output_params = dataset.n_output_params
 
-    # Parse parameters from config
-    kfold_splits = config.get("cross_validation", {}).get("kfold", 5)
+    cv_cfg = config.get("cross_validation", {})
+    kfold_splits = cv_cfg.get("kfold", 5)
     loss_function = get_loss_function(config)
-    
-    # ... (Hyperparameter suggestions) ...
+
     hyperparams_config = config.get("hyperparameter_search_space", {})
     learning_rate_config = hyperparams_config.get("learning_rate", {})
     batch_size_config = hyperparams_config.get("batch_size", {})
     epochs_config = hyperparams_config.get("epochs", {})
-    optimizer_config = config.get("hyperparameter_search_space", {}).get("optimizer_name", {})
+    optimizer_config = hyperparams_config.get("optimizer_name", {})
 
-    # Define Model and Hyperparameters using Optuna trial suggestions
+    # -------------------------------------------------------------------------
+    # 2. Define model + hyperparameters with Optuna
+    # -------------------------------------------------------------------------
     try:
-        # Use the passed model_builder function
+        # model_builder(trial, n_input, n_output) should return a torch.nn.Module
         model_template = model_builder(trial, n_input_params, n_output_params).to(Device)
     except Exception as e:
         print(f"Model definition failed: {e}")
         raise optuna.exceptions.TrialPruned()
 
     learning_rate = trial.suggest_loguniform(
-        "learning_rate", learning_rate_config.get("low", 0.0001), learning_rate_config.get("high", 0.01)
+        "learning_rate",
+        learning_rate_config.get("low", 0.0001),
+        learning_rate_config.get("high", 0.01),
     )
     batch_size = trial.suggest_int(
-        "batch_size", batch_size_config.get("low", 50), batch_size_config.get("high", 150)
+        "batch_size",
+        batch_size_config.get("low", 50),
+        batch_size_config.get("high", 150),
     )
     epochs = trial.suggest_int(
-        "epochs", epochs_config.get("low", 200), epochs_config.get("high", 200)
+        "epochs",
+        epochs_config.get("low", 200),
+        epochs_config.get("high", 200),
     )
-    # Correctly suggesting optimizer name using config defaults
-    optimizer_name = trial.suggest_categorical("optimizer_name", optimizer_config.get("choices", ["Adam"]))
+    optimizer_name = trial.suggest_categorical(
+        "optimizer_name",
+        optimizer_config.get("choices", ["Adam"]),
+    )
 
+    # `dataset.full_data` is [inputs | outputs] for training (train split only if used)
     data_train = dataset.full_data
-    
+
     kfold = KFold(n_splits=kfold_splits, shuffle=True, random_state=42)
     fold_losses = []
     global_step = 0
 
-    # K-Fold Loop
+    # -------------------------------------------------------------------------
+    # 3. K-Fold loop
+    # -------------------------------------------------------------------------
     for fold_idx, (train_idx, validate_idx) in enumerate(kfold.split(data_train)):
-        
         fold_model = copy.deepcopy(model_template).to(Device)
         optimizer = getattr(torch.optim, optimizer_name)(fold_model.parameters(), lr=learning_rate)
 
@@ -134,20 +156,28 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         validate_subset = data_train[validate_idx]
 
         train_loader, val_loader, _ = data_crossvalidation(
-            n_input_params, n_output_params, train_subset, validate_subset, batch_size
+            n_input_params,
+            n_output_params,
+            train_subset,
+            validate_subset,
+            batch_size,
         )
-        
+
         last_epoch_val_loss = 0.0
 
         for epoch in range(epochs):
-            # --- CRITICAL FIX 2: Replace UNSAFE st_state access with queue ---
+            # Cooperative stop between epochs
             if stop_event.is_set():
-                # Use thread-safe queue:
-                send_update(update_queue, 'log_messages', f"Stop signal received during Trial {trial.number}, Fold {fold_idx}. Pruning trial.")
-                # Gracefully stop this trial
+                send_update(
+                    update_queue,
+                    "log_messages",
+                    f"Stop signal received during Trial {trial.number}, Fold {fold_idx}. Pruning trial.",
+                )
                 raise optuna.exceptions.TrialPruned()
-            
-            # ... (Rest of training loop remains the same) ...
+
+            # -----------------------------
+            # Training loop
+            # -----------------------------
             fold_model.train()
             for x, y in train_loader:
                 optimizer.zero_grad()
@@ -156,84 +186,309 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
                 loss.backward()
                 optimizer.step()
 
-            # Validation step
+            # -----------------------------
+            # Validation loop
+            # -----------------------------
             fold_model.eval()
             with torch.no_grad():
-                val_loss_sum = 0
+                val_loss_sum = 0.0
                 for x, y in val_loader:
                     pred_validate = fold_model(x)
                     val_loss_sum += loss_function(pred_validate, y).item()
-                last_epoch_val_loss = val_loss_sum / len(val_loader)
+                last_epoch_val_loss = val_loss_sum / max(1, len(val_loader))
 
             # Report to Optuna for pruning
             trial.report(last_epoch_val_loss, global_step)
             global_step += 1
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
-        
 
         fold_losses.append(last_epoch_val_loss)
 
-    # compute average of the final validation loss from all folds
+    # -------------------------------------------------------------------------
+    # 4. Aggregate loss and compare against current best
+    # -------------------------------------------------------------------------
     avg_loss = np.mean(fold_losses)
     print(f"Avg Loss: {avg_loss:.6f}")
+
+    # Determine current best loss before this trial
     if trial.number == 0:
-        # If it's the very first trial, the current loss is the best so far.
-        current_best_loss = float('inf') 
+        current_best_loss = float("inf")
     else:
-        # For Trial 1 and beyond, Optuna will have completed trials and best_value is safe.
-        # We need to access the best_value safely, assuming the study object is available
-        # and has at least one completed trial (Trial 0).
         try:
             current_best_loss = trial.study.best_value
         except ValueError:
-            # Fallback for extreme cases (shouldn't happen after Trial 0 fix)
-            current_best_loss = float('inf')
+            current_best_loss = float("inf")
 
-    # --- NEW: Check and save the best intermediate model (uses send_update correctly) ---
+    # -------------------------------------------------------------------------
+    # 5. If this trial is the best so far, save model + retrain on full data + test
+    # -------------------------------------------------------------------------
     if avg_loss < current_best_loss:
-        # Update BEST_LOSS logic must now use the queue to tell the UI
-        # and rely on Optuna's internal study.best_value/best_trial
+        # Notify UI about new best loss and params
+        send_update(update_queue, "best_loss_so_far", avg_loss)
+        send_update(update_queue, "best_params_so_far", trial.params)
+        send_update(
+            update_queue,
+            "log_messages",
+            f"New best CV loss: {avg_loss:.6f}. Retraining best model on full training data...",
+        )
 
-        send_update(update_queue, 'best_loss_so_far', avg_loss)
-        send_update(update_queue, 'best_params_so_far', trial.params)
-        send_update(update_queue, 'log_messages', f"New best loss: {avg_loss:.6f}. Saving intermediate model...")
-        
-        # Save the model state dict (this now only needs to be local/saved to disk)
-        fold_model_state = fold_model.state_dict() 
-        save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
+        # ------------------------------------------------------------------
+        # A) RETRAIN MODEL ON FULL TRAINING DATA USING train_final_model
+        # ------------------------------------------------------------------
+        data_train_full = dataset.full_data      # shape: [N_train, n_input + n_output]
+        n_samples = data_train_full.shape[0]
+
+        if n_samples < 2:
+            # Pathological small dataset: skip retrain to avoid BN issues
+            send_update(
+                update_queue,
+                "log_messages",
+                "Training set has fewer than 2 samples. Skipping full-data retrain for this best model.",
+            )
+            best_model_full = model_template  # fall back to template / last fold
+        else:
+            # Build a fresh model with the same hyperparameters
+            best_model_full = model_builder(trial, n_input_params, n_output_params).to(Device)
+
+            # Use your centralized training routine
+            best_model_full = train_final_model(
+                model=best_model_full,
+                data_train=data_train_full,
+                best_params=trial.params,
+                n_input_params=n_input_params,
+                n_output_params=n_output_params,
+                config=config,
+            )
+
+            send_update(
+                update_queue,
+                "log_messages",
+                "Full-data training for new best model completed (via train_final_model).",
+            )
+
+        # ------------------------------------------------------------------
+        # B) SAVE INTERMEDIATE MODEL (FULL-DATA TRAINED or fallback)
+        # ------------------------------------------------------------------
         os.makedirs("models", exist_ok=True)
-        torch.save(fold_model_state, save_path)
-        print(f" (New Best Intermediate Model saved)")
+        save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
+        torch.save(best_model_full.state_dict(), save_path)
+        print(" (New Best Intermediate Model saved from full-data training)")
 
+        # Try to export ONNX using the full-data-trained model
         try:
-            intermediate_onnx_path = export_to_onnx(fold_model, dataset, os.path.join("models", "ANN_best_intermediate_model"))
-            send_update(update_queue, 'best_onnx_path', intermediate_onnx_path)
-            print(f" (New Best Intermediate Model saved in PT and ONNX)")
+            intermediate_onnx_path = export_to_onnx(
+                best_model_full,
+                dataset,
+                os.path.join("models", "ANN_best_intermediate_model"),
+            )
+            send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
+            print(" (New Best Intermediate Model saved in PT and ONNX)")
         except Exception as e:
-             send_update(update_queue, 'log_messages', f"Failed to export intermediate ONNX model: {e}")
-             print(f" (New Best Intermediate Model saved in PT only. ONNX export failed: {e})")
+            send_update(
+                update_queue,
+                "log_messages",
+                f"Failed to export intermediate ONNX model: {e}",
+            )
+            print(
+                " (New Best Intermediate Model saved in PT only. ONNX export failed: "
+                f"{e})"
+            )
 
+         # ------------------------------------------------------------------
+        # C) Evaluate this full-data-trained best model on TEST data
+        #    using the same logic as model_test.test(), but inline
+        # ------------------------------------------------------------------
+        if dataset_test is not None:
+            try:
+                import pandas as pd
+                from torch.utils.data import TensorDataset, DataLoader
 
+                # --- 1) Prepare test_data, n_input, n_output (like in test()) ---
+                if hasattr(dataset_test, "full_data") and hasattr(dataset_test, "n_input_params"):
+                    # Dataset-like object
+                    test_data = dataset_test.full_data
+                    n_input = dataset_test.n_input_params
+                    n_output = dataset_test.n_output_params
+                elif isinstance(dataset_test, pd.DataFrame):
+                    # DataFrame: assume same column layout as training dataset
+                    test_data = dataset_test.to_numpy(dtype="float32")
+                    n_input = dataset.n_input_params
+                    n_output = dataset.n_output_params
+                else:
+                    raise ValueError(
+                        "dataset_test must be a Dataset-like object with 'full_data' "
+                        "or a pandas DataFrame."
+                    )
+
+                # Match test() logic
+                input_data = test_data[:, :n_input].astype("float32")
+                output_data = test_data[:, n_input : n_input + n_output].astype("float32")
+
+                inputs_tensor = torch.from_numpy(input_data).to(Device)
+                outputs_tensor = torch.from_numpy(output_data).to(Device)
+
+                # Use testing settings from config (like model_test.test does via YAML)
+                targets_cfg = config.get("targets", {})
+                MRE_THRESHOLD = targets_cfg.get("mre_threshold", 25)
+                TEST_BATCH_SIZE = config.get("testing", {}).get("batch_size", 1)
+
+                test_loader = DataLoader(
+                    TensorDataset(inputs_tensor, outputs_tensor),
+                    batch_size=TEST_BATCH_SIZE,
+                    shuffle=False,
+                )
+
+                # --- 2) Evaluation Loop (same as in test()) ---
+                best_model_full.eval()
+                mre_list, y_pred_list, y_true_list = [], [], []
+
+                with torch.no_grad():
+                    for x, y in test_loader:
+                        y_pred = best_model_full(x)
+                        y_true = y
+
+                        y_pred_np = y_pred.cpu().numpy().flatten()
+                        y_true_np = y_true.cpu().numpy().flatten()
+
+                        rel_error = np.abs((y_pred_np - y_true_np) / (y_true_np + 1e-6))
+
+                        mre_list.extend(rel_error * 100)
+                        y_pred_list.extend(y_pred_np)
+                        y_true_list.extend(y_true_np)
+
+                y_true_array = np.array(y_true_list)
+                y_pred_array = np.array(y_pred_list)
+                y_mean = np.mean(y_true_array)
+
+                # R-squared
+                SS_res = np.sum((y_true_array - y_pred_array) ** 2)
+                SS_tot = np.sum((y_true_array - y_mean) ** 2)
+                r2 = 1 - (SS_res / SS_tot) if SS_tot != 0 else 0.0
+
+                # Normalized Mean Absolute Error (NMAE)
+                if y_mean != 0:
+                    nmae = np.sum(np.abs(y_pred_array - y_true_array)) / (
+                        len(y_true_array) * y_mean
+                    )
+                else:
+                    nmae = 0.0
+
+                # Percentage of samples within MRE_THRESHOLD
+                if len(y_true_list) > 0:
+                    test_accuracy = (
+                        np.sum(np.array(mre_list) <= MRE_THRESHOLD)
+                        / len(y_true_list)
+                        * 100
+                    )
+                else:
+                    test_accuracy = 0.0
+
+                test_metrics = {
+                    "NMAE": float(nmae),
+                    "R2": float(r2),
+                    "Accuracy": float(test_accuracy),
+                    "y_pred": y_pred_array,
+                    "y_true": y_true_array,
+                }
+
+                # --- 3) Send metrics to UI ---
+                send_update(update_queue, "live_best_test_metrics", test_metrics)
+                send_update(
+                    update_queue,
+                    "log_messages",
+                    (
+                        "Evaluated new best (full-data-trained) model on test data: "
+                        f"NMAE={nmae:.4f}, R²={r2:.4f}, Accuracy={test_accuracy:.2f}%"
+                    ),
+                )
+
+            except Exception as e:
+                send_update(
+                    update_queue,
+                    "log_messages",
+                    f"Failed to compute test metrics for full-data-trained best model: {e}",
+                )
+
+    # This is the value Optuna will minimize
     return avg_loss
 
-def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionStateProxy, stop_event: threading.Event):
+def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_state: SessionStateProxy, stop_event: threading.Event, is_resume: bool):
     """
-    Orchestrates the HPO using Optuna with real-time callbacks.
+    Orchestrates the HPO using Optuna with real-time callbacks, supporting resume capability.
+
+    Args:
+        dataset: Training data structure.
+        config: Configuration dictionary for HPO settings.
+        update_queue: Queue for sending real-time updates to the main thread (UI).
+        st_state: Streamlit SessionStateProxy for persistent storage (Optuna Study).
+        stop_event: Threading event to signal manual stop.
+        is_resume (bool): Flag indicating whether to resume an existing study.
     """
-    BEST_LOSS = float('inf')
-    BEST_MODEL_STATE = None
-    TRIALS_DONE = 0
-    # Also reset the session state mirror for the UI:
-    send_update(update_queue, 'best_loss_so_far', float('inf'))
-    send_update(update_queue, 'best_params_so_far', {})
-    send_update(update_queue, 'best_onnx_path', None) # <-- NEW RESET
     
-    # Define the callback function INSIDE optimization
+    # 1. Initialize & Reset UI Metrics
+    # (These initial resets are only truly necessary for a new run, but setting them 
+    # here ensures the UI starts with a clean slate unless resuming.)
+    if not is_resume:
+        send_update(update_queue, 'best_loss_so_far', float('inf'))
+        send_update(update_queue, 'best_params_so_far', {})
+        send_update(update_queue, 'best_onnx_path', None)
+        send_update(update_queue, 'current_trial_number', 0)
+        # --- NEW: Reset all live test metrics shown during training ---
+        send_update(update_queue, 'live_best_test_metrics', None)
+
+        # Optional: Reset individual metric keys if you store them separately
+        send_update(update_queue, 'best_intermediate_r2', None)
+        send_update(update_queue, 'best_intermediate_nmae', None)
+        send_update(update_queue, 'best_intermediate_accuracy', None)
+
+        # --- Reset final results from previous runs ---
+        send_update(update_queue, 'test_results', None)
+        send_update(update_queue, 'final_model_path', None)
+        send_update(update_queue, 'final_onnx_path', None)
+
+
+    
+    n_total_trials = config.get('hyperparameter_search_space', {}).get('n_samples', 50)
+    
+    # --- 2. Load or Create Optuna Study ---
+    
+    if is_resume and st_state.get('optuna_study') is not None:
+        # RESUME SCENARIO
+        study = st_state.optuna_study
+        n_completed_trials = len(study.trials)
+        n_trials_to_run = max(0, n_total_trials - n_completed_trials)
+        
+        send_update(update_queue, 'log_messages', 
+                    f"Resuming study. {n_completed_trials} trials complete. Running {n_trials_to_run} more.")
+        
+        # Sync UI state with the loaded study's progress
+        send_update(update_queue, 'current_trial_number', n_completed_trials)
+        
+        if study.best_trial:
+             send_update(update_queue, 'best_loss_so_far', study.best_trial.value)
+             send_update(update_queue, 'best_params_so_far', study.best_trial.params)
+             
+    else:
+        # NEW STUDY SCENARIO (or resume=False)
+        if st_state.get('optuna_study') is not None:
+            # If a stale study exists in state but we want a new run, clear it.
+            st_state.optuna_study = None
+            
+        study = optuna.create_study(direction="minimize")
+        n_trials_to_run = n_total_trials
+        send_update(update_queue, 'log_messages', f"Starting new Optuna study for {n_total_trials} trials.")
+
+    # Check if there's any work to do
+    if n_trials_to_run <= 0:
+         send_update(update_queue, 'log_messages', "Optimization finished. Trials to run is zero.")
+         return study.best_params if study.best_trial else None, study
+
+    # --- 3. Define the Callback Function ---
     def optuna_callback(study: optuna.Study, trial: optuna.Trial):
         
-        # 1. Update trial progress: USE QUEUE
-        send_update(update_queue, 'current_trial_number', trial.number)
+        # 1. Update trial progress: USE QUEUE (use len(study.trials) for accurate count)
+        send_update(update_queue, 'current_trial_number', len(study.trials))
         
         # 2. Check for stop signal (between trials)
         if stop_event.is_set():
@@ -246,44 +501,48 @@ def optimization(dataset, config, update_queue: queue.Queue, st_state: SessionSt
             send_update(update_queue, 'log_messages', f"Trial {trial.number} finished. Loss: {trial.value:.6f}")
         elif trial.state == optuna.trial.TrialState.PRUNED:
             send_update(update_queue, 'log_messages', f"Trial {trial.number} pruned.")
+        # Note: Best loss update is handled within crossvalidation
 
-        pass
-
-    # --- End of Callback Definition ---
-
-    # --- CRITICAL FIX 3: Correct objective lambda to pass ALL 6 arguments ---
-    # The arguments must match the crossvalidation definition:
-    # (trial, model_builder, dataset, config, update_queue, stop_event)
+    # --- 4. Define Objective and Run Optimization ---
+    
     objective = lambda trial: crossvalidation(
         trial, 
-        define_net_regression, # 2. Model Builder
-        dataset,               # 3. Dataset
-        config,                # 4. Config
-        update_queue,          # 5. Queue
-        stop_event             # 6. Stop Event
-        # NOTE: st_state is intentionally omitted here because crossvalidation no longer needs it.
+        define_net_regression, 
+        dataset,               
+        config,                
+        update_queue,          
+        stop_event,
+        dataset_test             
     )
     
-    study = optuna.create_study(direction="minimize")
+    try:
+        study.optimize(
+            objective, 
+            n_trials = n_trials_to_run, # IMPORTANT: Only run the REMAINING trials
+            callbacks=[optuna_callback]
+        )
+    except Exception as e:
+        send_update(update_queue, 'log_messages', f"Optimization Error: {e}")
+        # Ensure the current study is saved before exiting on error
+        st_state.optuna_study = study
+        return None, study
+
+    # --- 5. Final Cleanup and State Saving ---
     
-    # Use config for n_trials (avoids the st_state crash)
-    n_trials_safe = config.get('hyperparameter_search_space', {}).get('n_samples', 50) 
-    
-    study.optimize(
-        objective, 
-        n_trials = n_trials_safe, 
-        callbacks=[optuna_callback]
-    )
+    # CRITICAL: Save the modified/completed study object back to session state proxy
+    st_state.optuna_study = study
+
+    # NEW: Also send it to the UI thread via the update queue
+    send_update(update_queue, 'optuna_study', study)
     
     if stop_event.is_set():
-        send_update(update_queue, 'log_messages', "Optimization was stopped.")
-        if study.best_trial:
-            return study.best_trial.params, study
-        else:
-            return None, None
+        send_update(update_queue, 'log_messages', "Optimization was manually stopped.")
+        return study.best_params if study.best_trial else None, study
 
     send_update(update_queue, 'log_messages', "Optimization finished.")
     return study.best_params, study
+
+    
 
 def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config):
     # ... (function body remains the same) ...
