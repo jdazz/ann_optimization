@@ -1,4 +1,4 @@
-# app.py - ANN Optimization Dashboard (Rewritten)
+# app.py - ANN Optimization Dashboard (Filesystem-driven reloads)
 
 import os
 import time
@@ -28,6 +28,14 @@ from utils.initialize_session import initialize_session_state
 from utils.queue_utils import process_queue_updates
 from utils.state_manager import handle_thread_reattachment
 from utils.data_utils import detect_and_handle_data_input
+from utils.run_manager import (
+    make_config_hash,
+    derive_dataset_name,
+    find_existing_run,
+    find_any_in_progress,
+    read_value_file,
+    zip_run_dir,
+)
 
 # --- UI Components ---
 from ui.control_panel import render_control_panel
@@ -47,8 +55,13 @@ DEFAULT_CONFIG = load_config(CONFIG_PATH)
 st.set_page_config(layout="wide")
 st.title("ANN Optimization Dashboard")
 
-# Initialize base session state (may already set current_ui_config, etc.)
+# Initialize base session state (may already set current_ui_config, log_messages, etc.)
 initialize_session_state()
+handle_thread_reattachment()
+
+# Ensure log_messages exists and is a deque
+if "log_messages" not in st.session_state or st.session_state.log_messages is None:
+    st.session_state.log_messages = deque(maxlen=500)
 
 # Ensure current_ui_config exists and is a dict
 if "current_ui_config" not in st.session_state or st.session_state.current_ui_config is None:
@@ -66,8 +79,124 @@ if "selected_features" not in st.session_state:
 if "selected_targets" not in st.session_state:
     st.session_state.selected_targets = variables_cfg.get("output_names", None)
 
-# Critical thread re-attachment (if a training thread is already running in session_state)
-handle_thread_reattachment()
+
+# ----------------------------------------------------------------------------------
+# 2.1 Hydrate run state + metrics/logs from disk (no thread reattachment)
+# ----------------------------------------------------------------------------------
+def hydrate_from_disk():
+    """
+    Use the filesystem as the source of truth for the current run.
+    - Detect any __IN_PROGRESS run via find_any_in_progress("runs")
+    - Update run_status, current_run_dir, is_running
+    - Hydrate metrics and summary logs from the run folder
+    """
+
+    status, path, run_id = find_any_in_progress("runs")
+
+    # Persist basic run info in session_state
+    st.session_state.run_status = status
+    st.session_state.current_run_dir = path
+
+    # For the UI, treat "IN_PROGRESS" as running; otherwise not running
+    st.session_state.is_running = (status == "IN_PROGRESS")
+
+    # If we didn't find an in-progress run, we still might want the last completed run
+    # (optional: use find_existing_run based on config+dataset)
+    if not path:
+        try:
+            cfg_hash = make_config_hash(st.session_state.config)
+            dataset_name = st.session_state.get("dataset_name")
+            if not dataset_name:
+                train_file = st.session_state.get("persistent_train_file_obj")
+                if train_file and hasattr(train_file, "name"):
+                    dataset_name = derive_dataset_name(
+                        type("Tmp", (), {"name": train_file.name})()
+                    )
+            if not dataset_name:
+                dataset_name = "dataset"
+
+            status_existing, path_existing = find_existing_run("runs", dataset_name, cfg_hash)
+            if path_existing:
+                status = status_existing
+                path = path_existing
+                st.session_state.run_status = status
+                st.session_state.current_run_dir = path
+        except Exception:
+            # If anything goes wrong here, just skip and leave whatever we had
+            pass
+
+    # If we still don't have a path, nothing to hydrate
+    if not path:
+        return
+
+    # -----------------------------
+    # Hydrate metrics from files
+    # -----------------------------
+    st.session_state.best_loss_so_far = (
+        read_value_file(path, "best_cv_loss.txt") or float("inf")
+    )
+    st.session_state.best_intermediate_r2 = read_value_file(
+        path, "best_intermediate_r2.txt"
+    )
+    st.session_state.best_intermediate_nmae = read_value_file(
+        path, "best_intermediate_nmae.txt"
+    )
+    st.session_state.best_intermediate_accuracy = read_value_file(
+        path, "best_intermediate_accuracy.txt"
+    )
+
+    best_metrics = read_value_file(path, "best_metrics.json")
+    if best_metrics:
+        # Allow either already-parsed or raw JSON string
+        if isinstance(best_metrics, str):
+            try:
+                best_metrics = json.loads(best_metrics)
+            except Exception:
+                pass
+        st.session_state.live_best_test_metrics = best_metrics
+
+    # -----------------------------
+    # Hydrate logs from summary.txt
+    # -----------------------------
+    summary_path = os.path.join(path, "summary.txt")
+    if os.path.exists(summary_path):
+        try:
+            with open(summary_path, "r") as f:
+                lines = f.readlines()
+
+            # Reset log_messages and load from file (newest first)
+            st.session_state.log_messages.clear()
+            for line in reversed(lines):
+                st.session_state.log_messages.append(line.rstrip("\n"))
+
+        except Exception:
+            # If summary fails, we just keep whatever logs we had
+            pass
+
+    # Add warning for in-progress runs
+    if status == "IN_PROGRESS" and run_id:
+        st.session_state.log_messages.appendleft(
+            f"⚠️ Found in-progress run on disk ({run_id}). "
+            f"Live updates are being read from the run folder."
+        )
+
+
+# Run hydration on every script execution (i.e., on every rerun)
+hydrate_from_disk()
+
+# ----------------------------------------------------------------------------------
+# 2.2 Completed run archives listing
+# ----------------------------------------------------------------------------------
+def list_run_archives(base_dir="runs"):
+    archives = []
+    if not os.path.isdir(base_dir):
+        return archives
+    for name in os.listdir(base_dir):
+        if name.endswith(".zip"):
+            path = os.path.join(base_dir, name)
+            if os.path.isfile(path):
+                archives.append((name, path))
+    return sorted(archives, reverse=True)
 
 
 # ----------------------------------------------------------------------------------
@@ -203,14 +332,12 @@ if st.session_state.available_columns:
     st.session_state["output_vars_global"] = target_string
 
     # Persist to config.yaml on every change
-    # (Assumes save_config(config_dict, path) signature)
     save_config(st.session_state.current_ui_config, CONFIG_PATH)
 
 
 # ----------------------------------------------------------------------------------
 # 5. Config UI (model / HPO / CV settings)
 # ----------------------------------------------------------------------------------
-# render_config_ui should read/write st.session_state.current_ui_config internally
 render_config_ui(
     DEFAULT_CONFIG,
     CONFIG_PATH,
@@ -255,21 +382,41 @@ render_control_panel()
 
 
 # ----------------------------------------------------------------------------------
-# 8. Final Results Section
+# 8. Final Results Section + Completed Archives
 # ----------------------------------------------------------------------------------
 render_final_results()
 
+# Completed run archives display
+archives = list_run_archives()
+if archives:
+    st.subheader("Completed Runs (ZIP)")
+    for name, path in archives:
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            st.download_button(
+                label=f"Download {name}",
+                data=data,
+                file_name=name,
+                mime="application/zip",
+            )
+        except Exception:
+            st.write(f"{name} (unreadable)")
+else:
+    st.info("No completed run archives found yet.")
+
 
 # ----------------------------------------------------------------------------------
-# 9. Auto-Rerun and Thread Completion Handler (Polling Logic)
+# 9. Auto-Rerun and Filesystem-based Polling Logic
 # ----------------------------------------------------------------------------------
-# 1. Process queue messages from backend thread
+# 1. Process queue messages from backend thread (still used when the thread exists
+#    in the same Streamlit process; but reloads no longer depend on reattaching)
 queue_data_received = process_queue_updates()
 
 # 2. Decide whether to poll again
-should_poll = st.session_state.get("is_running", False) or st.session_state.get(
-    "is_resumable", False
-)
+# Treat "IN_PROGRESS" status from the run folder as the source of truth
+run_status = st.session_state.get("run_status")
+should_poll = (run_status == "IN_PROGRESS") or st.session_state.get("is_resumable", False)
 
 if queue_data_received:
     st.rerun()

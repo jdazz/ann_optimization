@@ -2,6 +2,9 @@
 
 import streamlit as st
 import queue
+import os
+
+from utils.run_manager import append_run_log, write_value_file
 
 
 def process_queue_updates() -> bool:
@@ -48,6 +51,9 @@ def process_queue_updates() -> bool:
             if "log_messages" not in ss:
                 ss.log_messages = []
             ss.log_messages.append(value)
+            # Mirror live log into summary.txt of current run, if known
+            run_dir = ss.get("current_run_dir")
+            append_run_log(run_dir, str(value))
 
         elif key == "is_running":
             ss.is_running = bool(value)
@@ -57,6 +63,32 @@ def process_queue_updates() -> bool:
             ss.optuna_study = value
         elif key == "live_best_test_metrics":
             ss.live_best_test_metrics = value
+            run_dir = ss.get("current_run_dir")
+            if value:
+                append_run_log(run_dir, f"[best_metrics] {value}")
+                write_value_file(run_dir, "best_metrics.json", value)
+
+        elif key == "best_loss_so_far":
+            try:
+                ss.best_loss_so_far = float(value)
+            except Exception:
+                ss.best_loss_so_far = value
+            run_dir = ss.get("current_run_dir")
+            append_run_log(run_dir, f"[best_cv_loss] {value}")
+            write_value_file(run_dir, "best_cv_loss.txt", value)
+
+        elif key == "best_params_so_far":
+            ss.best_params_so_far = value
+            run_dir = ss.get("current_run_dir")
+            append_run_log(run_dir, f"[best_params] {value}")
+            write_value_file(run_dir, "best_params.json", value)
+
+        elif key in ("best_intermediate_r2", "best_intermediate_nmae", "best_intermediate_accuracy"):
+            ss[key] = value
+            run_dir = ss.get("current_run_dir")
+            append_run_log(run_dir, f"[{key}] {value}")
+            filename = f"{key}.txt"
+            write_value_file(run_dir, filename, value)
 
         # Add other explicit keys here if you like, e.g. best_loss_so_far, etc.
         # elif key == "best_loss_so_far":

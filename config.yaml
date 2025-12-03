@@ -1,11 +1,11 @@
 cross_validation:
   kfold: 5
-  test_split_ratio: 0.2
+  test_split_ratio: 0.05
   output_variables:
   - consume
   testing_path: data/training.parquet
   training_path: data/training.parquet
-  standardize_features: true
+  standardize_features: false
 display:
   show_plot: false
   show_prediction_plot: true

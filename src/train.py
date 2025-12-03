@@ -12,7 +12,6 @@ import yaml
 import copy
 import queue
 import threading
-from streamlit.runtime.state import SessionStateProxy # For type hinting
 
 # Assuming define_net_regression is defined or imported correctly.
 # We'll use a placeholder import for the final script structure.
@@ -74,7 +73,7 @@ def get_loss_function(config):
 
 
 # --- CRITICAL FIX 1: Simplify and unify the crossvalidation signature ---
-def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Queue, stop_event: threading.Event, dataset_test):
+def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Queue, stop_event: threading.Event, dataset_test, run_dir):
     """
     Optuna objective function.
     Performs K-Fold cross validation, saves the best model found so far, and returns
@@ -214,14 +213,14 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     print(f"Avg Loss: {avg_loss:.6f}")
 
     # -------------------------------------------------------------------------
-    # 5. CV-based candidate filter using global BEST_CV_LOSS
+    # 5. CV-based candidate filter using global BEST_CV_LOSS (selection by CV only)
     # -------------------------------------------------------------------------
     if avg_loss < BEST_CV_LOSS:
         BEST_CV_LOSS = avg_loss
 
         # Notify UI about new best CV loss and params
-        send_update(update_queue, "best_loss_so_far", avg_loss)
-        send_update(update_queue, "best_params_so_far", trial.params)
+        # send_update(update_queue, "best_loss_so_far", avg_loss)
+        # send_update(update_queue, "best_params_so_far", trial.params)
         send_update(
             update_queue,
             "log_messages",
@@ -388,36 +387,41 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         # C) Commit as best model only if test R² improves
         # ------------------------------------------------------------------
         if test_metrics is not None and r2 > BEST_R2:
-            BEST_R2 = r2
+            BEST_R2 = r2  # keep tracking for display purposes
 
-            # Save model and export ONNX
-            os.makedirs("models", exist_ok=True)
-            save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
-            torch.save(best_model_full.state_dict(), save_path)
-            send_update(update_queue, "best_model_path", save_path)
-            print(" (New Best Intermediate Model saved from full-data training)")
+        # Notify UI about new best CV loss and params (selection is CV-driven)
+        send_update(update_queue, "best_loss_so_far", avg_loss)
+        send_update(update_queue, "best_params_so_far", trial.params)
 
-            intermediate_onnx_path = None
-            try:
+        # Save model and export ONNX
+        os.makedirs(run_dir, exist_ok=True)
+        save_path = os.path.join(run_dir, "best_model.pt")
+        torch.save(best_model_full.state_dict(), save_path)
+        send_update(update_queue, "best_model_path", save_path)
+        print(" (New Best Intermediate Model saved from full-data training)")
+
+        intermediate_onnx_path = None
+        try:
                 intermediate_onnx_path = export_to_onnx(
                     best_model_full,
                     dataset,
-                    os.path.join("models", "ANN_best_intermediate_model"),
+                    os.path.join(run_dir, "best_model"),
                 )
                 send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
                 print(" (New Best Intermediate Model saved in PT and ONNX)")
-            except Exception as e:
-                send_update(
-                    update_queue,
-                    "log_messages",
-                    f"Failed to export intermediate ONNX model: {e}",
-                )
-                print(
-                    " (New Best Intermediate Model saved in PT only. ONNX export failed: "
-                    f"{e})"
-                )
+        except Exception as e:
+            send_update(
+                update_queue,
+                "log_messages",
+                f"Failed to export intermediate ONNX model: {e}",
+            )
+            print(
+                " (New Best Intermediate Model saved in PT only. ONNX export failed: "
+                f"{e})"
+            )
 
-            # Send metrics/logs to UI for accepted best model
+        # Send metrics/logs to UI for accepted best model
+        if test_metrics is not None:
             send_update(update_queue, "live_best_test_metrics", test_metrics)
             send_update(update_queue, "best_intermediate_r2", r2)
             send_update(update_queue, "best_intermediate_nmae", test_metrics["NMAE"])
@@ -426,25 +430,38 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
                 update_queue,
                 "log_messages",
                 (
-                    f"New best model found based on TEST R²={r2:.4f}. "
-                    f"(CV loss={avg_loss:.6f})"
+                    "New best model found. "
+                    
                 ),
             )
         else:
             send_update(
                 update_queue,
                 "log_messages",
-                (
-                    f"Candidate trial improved CV loss to {avg_loss:.6f} "
-                    f"but test R²={r2:.4f} did not beat current best R²={BEST_R2:.4f}. "
-                    "Keeping previous best model."
-                ),
+                f"New best model chosen by CV loss ({avg_loss:.6f}). Test metrics unavailable.",
             )
+
+        # --- Alternative selection by test R² (kept for reference) ---
+        # if test_metrics is not None and r2 > BEST_R2:
+        #     BEST_R2 = r2
+        #     BEST_CV_LOSS = avg_loss
+        #     ... (save model and send updates)
+        # else:
+        #     ... (log that R² did not improve)
 
     # This is the value Optuna will minimize
     return avg_loss
 
-def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_state: SessionStateProxy, stop_event: threading.Event, is_resume: bool):
+def optimization(
+    dataset,
+    dataset_test,
+    config,
+    update_queue: queue.Queue,
+    stop_event: threading.Event,
+    is_resume: bool,
+    optuna_study=None,
+    run_dir=None,
+):
     """
     Orchestrates the HPO using Optuna with real-time callbacks, supporting resume capability.
 
@@ -452,9 +469,9 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
         dataset: Training data structure.
         config: Configuration dictionary for HPO settings.
         update_queue: Queue for sending real-time updates to the main thread (UI).
-        st_state: Streamlit SessionStateProxy for persistent storage (Optuna Study).
         stop_event: Threading event to signal manual stop.
         is_resume (bool): Flag indicating whether to resume an existing study.
+        optuna_study: Optional pre-existing Optuna Study object (for resume).
     """
     
     # 1. Initialize & Reset UI Metrics
@@ -487,9 +504,9 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
     
     # --- 2. Load or Create Optuna Study ---
     
-    if is_resume and st_state.get('optuna_study') is not None:
+    if is_resume and optuna_study is not None:
         # RESUME SCENARIO
-        study = st_state.optuna_study
+        study = optuna_study
         n_completed_trials = len(study.trials)
         n_trials_to_run = max(0, n_total_trials - n_completed_trials)
         
@@ -505,10 +522,6 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
              
     else:
         # NEW STUDY SCENARIO (or resume=False)
-        if st_state.get('optuna_study') is not None:
-            # If a stale study exists in state but we want a new run, clear it.
-            st_state.optuna_study = None
-            
         study = optuna.create_study(direction="minimize")
         n_trials_to_run = n_total_trials
         send_update(update_queue, 'log_messages', f"Starting new Optuna study for {n_total_trials} trials.")
@@ -546,7 +559,8 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
         config,                
         update_queue,          
         stop_event,
-        dataset_test             
+        dataset_test,
+        run_dir,
     )
     
     try:
@@ -557,15 +571,10 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
         )
     except Exception as e:
         send_update(update_queue, 'log_messages', f"Optimization Error: {e}")
-        # Ensure the current study is saved before exiting on error
-        st_state.optuna_study = study
         return None, study
 
     # --- 5. Final Cleanup and State Saving ---
     
-    # CRITICAL: Save the modified/completed study object back to session state proxy
-    st_state.optuna_study = study
-
     # NEW: Also send it to the UI thread via the update queue
     send_update(update_queue, 'optuna_study', study)
     
@@ -578,7 +587,7 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
 
     
 
-def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config):
+def train_final_model(model, data_train, best_params, n_input_params, n_output_params, config, stop_event: threading.Event | None = None):
     # ... (function body remains the same) ...
     print(f"Retraining final model on full dataset ({len(data_train)} samples)...")
     
@@ -605,6 +614,9 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     # Training Loop
     model.train()
     for epoch in range(epochs):
+        if stop_event is not None and stop_event.is_set():
+            print("Stop signal received during final training. Aborting.")
+            break
         epoch_loss = 0
         for x, y in train_loader:
             optimizer.zero_grad()

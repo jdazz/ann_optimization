@@ -14,6 +14,8 @@ from src.dataset import Dataset
 from src.model_test import test
 from src.plot import make_plotly_figure
 from utils.save_scaler import save_scaler_to_json
+from utils.run_manager import zip_run_dir
+from pathlib import Path
 
 
 def get_test_dataset():
@@ -179,46 +181,78 @@ def render_final_download():
         st.error(f"Error preparing final model for download: {e}")
 
 
+from pathlib import Path
+
 def render_optuna_plots():
-    """Renders the Optuna optimization plots."""
+    """Renders the Optuna optimization plots and saves them as PDFs only."""
     config = st.session_state.current_ui_config
     display_config = config.get("display", {})
+    run_dir = st.session_state.get("current_run_dir")
 
-    if display_config.get("show_optuna_plots", True):
-        if "optuna_study" in st.session_state and st.session_state.optuna_study is not None:
-            st.subheader("Hyperparameter Optimization Analysis")
+    plots_dir = None
+    if run_dir:
+        plots_dir = Path(run_dir) / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
 
+    if not display_config.get("show_optuna_plots", True):
+        return
+
+    study = st.session_state.get("optuna_study")
+    if study is None:
+        st.info("Optuna study results not found in session state.")
+        return
+
+    st.subheader("Hyperparameter Optimization Analysis")
+
+    # ------------------------------------------------------------------
+    # Optimization history
+    # ------------------------------------------------------------------
+    try:
+        fig_history = ov.plot_optimization_history(study)
+        st.plotly_chart(fig_history, use_container_width=True)
+
+        # Save ONLY as PDF
+        if plots_dir:
             try:
-                
-                fig_history = ov.plot_optimization_history(st.session_state.optuna_study)
-                st.plotly_chart(fig_history, use_container_width=True)
+                fig_history.write_image(plots_dir / "optuna_optimization_history.pdf")
             except Exception as e:
-                st.warning(f"Could not generate Optimization History plot: {e}")
+                st.warning(f"Could not save Optimization History PDF: {e}")
+    except Exception as e:
+        st.warning(f"Could not generate Optimization History plot: {e}")
 
+    # ------------------------------------------------------------------
+    # Parameter importance
+    # ------------------------------------------------------------------
+    try:
+        fig_importance = ov.plot_param_importances(study)
+        st.plotly_chart(fig_importance, use_container_width=True)
+
+        # Save ONLY as PDF
+        if plots_dir:
             try:
-                
-                fig_importance = ov.plot_param_importances(st.session_state.optuna_study)
-                st.plotly_chart(fig_importance, use_container_width=True)
+                fig_importance.write_image(plots_dir / "optuna_param_importance.pdf")
             except Exception as e:
-                st.warning(f"Could not generate Parameter Importance plot: {e}")
+                st.warning(f"Could not save Parameter Importance PDF: {e}")
+    except Exception as e:
+        st.warning(f"Could not generate Parameter Importance plot: {e}")
 
-            st.markdown("---")
-        else:
-            st.info("Optuna study results not found in session state.")
+    st.markdown("---")
 
 
 def render_final_results():
-    """The main function to render the final results section."""
+    """Render the final results section (PDF-only plot saving)."""
 
     st.divider()
     st.header("Final Results")
 
     # Condition to trigger the final testing phase
     if st.session_state.final_model_path and st.session_state.data_split_mode != "none":
-        if not st.session_state.test_results and not st.session_state.is_running:
-            run_final_test()
-            # If run_final_test successfully completes, it calls st.rerun()
 
+        # Run final test once training is finished
+        if not st.session_state.test_results and not st.session_state.is_running:
+            run_final_test()   # triggers rerun on success
+
+        # Once test results exist, display everything
         if st.session_state.test_results:
             st.subheader("Test Metrics")
             results = st.session_state.test_results
@@ -232,7 +266,7 @@ def render_final_results():
 
             st.markdown("---")
 
-            # Plots
+            # Parity Plot
             config = st.session_state.current_ui_config
             display_config = config.get("display", {})
 
@@ -240,16 +274,41 @@ def render_final_results():
                 st.subheader("Final Model Prediction Analysis (Parity Plot)")
                 fig_parity = make_plotly_figure(results["y_pred"], results["y_true"])
                 st.plotly_chart(fig_parity, use_container_width=True)
+
+                # Save ONLY PDF — no HTML anymore
+                run_dir = st.session_state.get("current_run_dir")
+                if run_dir:
+                    plots_dir = Path(run_dir) / "plots"
+                    plots_dir.mkdir(parents=True, exist_ok=True)
+
+                    pdf_path = plots_dir / "parity_plot.pdf"
+                    try:
+                        fig_parity.write_image(pdf_path)
+                    except Exception as e:
+                        st.warning(f"Could not save parity plot PDF: {e}")
+
                 st.markdown("---")
 
+            # Optuna Plots (only PDF saving)
             render_optuna_plots()
 
+            # After plots saved, zip the run directory
+            run_dir = st.session_state.get("current_run_dir")
+            if run_dir:
+                zip_path = zip_run_dir(run_dir)
+                if zip_path:
+                    st.session_state.final_zip_path = zip_path
+
+    # Training manually stopped
     elif st.session_state.was_stopped_manually and os.path.exists(
         st.session_state.best_model_path
     ):
         st.info("Training was manually stopped. View the best intermediate results above.")
 
+    # Training still running
     elif st.session_state.is_running:
         st.info("Waiting for training to complete to display final results...")
+
+    # No data
     else:
         st.warning("Upload a training file and run training to see final results.")
