@@ -48,6 +48,60 @@ def run_training_pipeline(dataset_train, dataset_test, config, update_queue: que
         # (which is better suited for primitive types).
         st_state.optuna_study = study
         send_update('log_messages', "Optimization complete. Optuna study object saved for visualization.")
+
+        # ------------------------------------------------------------------
+        # Prefer the already-trained best intermediate model to avoid
+        # randomness from retraining a new "final" model with the same params.
+        # This keeps Live HPO metrics and Final metrics in sync.
+        # ------------------------------------------------------------------
+        best_model_path = getattr(st_state, "best_model_path", "models/ANN_best_intermediate_model.pt")
+        best_onnx_path = getattr(st_state, "best_onnx_path", None)
+        if os.path.exists(best_model_path):
+            # Rename intermediate best to final best for consistent download naming
+            final_model_path = os.path.join("models", "ANN_final_model.pt")
+            if best_model_path != final_model_path:
+                os.replace(best_model_path, final_model_path)
+                st_state.best_model_path = final_model_path
+                send_update('best_model_path', final_model_path)
+
+            # Align ONNX path and ensure availability
+            final_onnx_path = os.path.join("models", "ANN_final_model.onnx")
+            if best_onnx_path and os.path.exists(best_onnx_path):
+                if best_onnx_path != final_onnx_path:
+                    try:
+                        os.replace(best_onnx_path, final_onnx_path)
+                    except Exception as e:
+                        send_update('log_messages', f"⚠️ Failed to rename ONNX best model: {e}")
+                        final_onnx_path = best_onnx_path  # fallback to existing path
+            else:
+                try:
+                    # Re-export ONNX from the saved best model weights if needed
+                    model_for_export = define_net_regression(
+                        best_params,
+                        dataset_train.n_input_params,
+                        dataset_train.n_output_params,
+                    ).to(Device)
+                    state_dict = torch.load(final_model_path, map_location=Device)
+                    model_for_export.load_state_dict(state_dict)
+                    final_onnx_path = export_to_onnx(
+                        model_for_export,
+                        dataset_train,
+                        os.path.join("models", "ANN_final_model"),
+                    )
+                except Exception as e:
+                    send_update('log_messages', f"⚠️ Failed to export ONNX from best model: {e}")
+                    final_onnx_path = None
+
+            # Store ONNX path for intermediate download as well
+            st_state.best_onnx_path = final_onnx_path
+            send_update('best_onnx_path', final_onnx_path)
+
+            send_update('log_messages', "Using best intermediate model for final outputs (renamed to final).")
+            send_update('final_model_path', final_model_path)
+            send_update('final_onnx_path', final_onnx_path)
+            send_update('best_params_so_far', best_params)
+            send_update('is_running', False)
+            return
         
         # 2. Define the Final Model Architecture
         send_update('log_messages', "\n--- Creating Final Model Architecture ---")

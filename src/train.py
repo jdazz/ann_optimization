@@ -28,6 +28,8 @@ Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BEST_MODEL_STATE = None
 BEST_LOSS = float('inf')
 TRIALS_DONE = 0
+BEST_CV_LOSS = float('inf')   # best (lowest) cross-validation loss so far
+BEST_R2 = -float('inf')       # best test R² so far
 # ---------------------------
 
 def send_update(update_queue: queue.Queue, key, value):
@@ -87,7 +89,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
 
     Arguments order matches the objective lambda from optimization().
     """
-    global BEST_MODEL_STATE, BEST_LOSS, TRIALS_DONE
+    global BEST_MODEL_STATE, BEST_LOSS, TRIALS_DONE, BEST_CV_LOSS, BEST_R2
     TRIALS_DONE += 1
 
     print(f"\nTrial {trial.number}: ", end="")
@@ -211,26 +213,19 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     avg_loss = np.mean(fold_losses)
     print(f"Avg Loss: {avg_loss:.6f}")
 
-    # Determine current best loss before this trial
-    if trial.number == 0:
-        current_best_loss = float("inf")
-    else:
-        try:
-            current_best_loss = trial.study.best_value
-        except ValueError:
-            current_best_loss = float("inf")
+    # -------------------------------------------------------------------------
+    # 5. CV-based candidate filter using global BEST_CV_LOSS
+    # -------------------------------------------------------------------------
+    if avg_loss < BEST_CV_LOSS:
+        BEST_CV_LOSS = avg_loss
 
-    # -------------------------------------------------------------------------
-    # 5. If this trial is the best so far, save model + retrain on full data + test
-    # -------------------------------------------------------------------------
-    if avg_loss < current_best_loss:
-        # Notify UI about new best loss and params
+        # Notify UI about new best CV loss and params
         send_update(update_queue, "best_loss_so_far", avg_loss)
         send_update(update_queue, "best_params_so_far", trial.params)
         send_update(
             update_queue,
             "log_messages",
-            f"New best CV loss: {avg_loss:.6f}. Retraining best model on full training data...",
+            f"New best CV loss: {avg_loss:.6f}. Retraining candidate best model on full training data...",
         )
 
         # ------------------------------------------------------------------
@@ -268,37 +263,10 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
             )
 
         # ------------------------------------------------------------------
-        # B) SAVE INTERMEDIATE MODEL (FULL-DATA TRAINED or fallback)
+        # B) Evaluate candidate on TEST data (if available)
         # ------------------------------------------------------------------
-        os.makedirs("models", exist_ok=True)
-        save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
-        torch.save(best_model_full.state_dict(), save_path)
-        print(" (New Best Intermediate Model saved from full-data training)")
-
-        # Try to export ONNX using the full-data-trained model
-        try:
-            intermediate_onnx_path = export_to_onnx(
-                best_model_full,
-                dataset,
-                os.path.join("models", "ANN_best_intermediate_model"),
-            )
-            send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
-            print(" (New Best Intermediate Model saved in PT and ONNX)")
-        except Exception as e:
-            send_update(
-                update_queue,
-                "log_messages",
-                f"Failed to export intermediate ONNX model: {e}",
-            )
-            print(
-                " (New Best Intermediate Model saved in PT only. ONNX export failed: "
-                f"{e})"
-            )
-
-         # ------------------------------------------------------------------
-        # C) Evaluate this full-data-trained best model on TEST data
-        #    using the same logic as model_test.test(), but inline
-        # ------------------------------------------------------------------
+        test_metrics = None
+        r2 = -float("inf")
         if dataset_test is not None:
             try:
                 import pandas as pd
@@ -324,6 +292,23 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
                 # Match test() logic
                 input_data = test_data[:, :n_input].astype("float32")
                 output_data = test_data[:, n_input : n_input + n_output].astype("float32")
+
+                # Align test data scaling with training pipeline so live metrics match final metrics
+                scaler = getattr(dataset, "scaler", None)
+                if getattr(dataset, "should_standardize", False) and scaler is not None:
+                    try:
+                        input_data = scaler.transform(input_data)
+                        send_update(
+                            update_queue,
+                            "log_messages",
+                            "Applied fitted scaler to test data for live metrics.",
+                        )
+                    except Exception as e:
+                        send_update(
+                            update_queue,
+                            "log_messages",
+                            f"⚠️ Failed to scale test data for live metrics: {e}",
+                        )
 
                 inputs_tensor = torch.from_numpy(input_data).to(Device)
                 outputs_tensor = torch.from_numpy(output_data).to(Device)
@@ -392,23 +377,69 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
                     "y_true": y_true_array,
                 }
 
-                # --- 3) Send metrics to UI ---
-                send_update(update_queue, "live_best_test_metrics", test_metrics)
-                send_update(
-                    update_queue,
-                    "log_messages",
-                    (
-                        "Evaluated new best (full-data-trained) model on test data: "
-                        f"NMAE={nmae:.4f}, R²={r2:.4f}, Accuracy={test_accuracy:.2f}%"
-                    ),
-                )
-
             except Exception as e:
                 send_update(
                     update_queue,
                     "log_messages",
-                    f"Failed to compute test metrics for full-data-trained best model: {e}",
+                    f"Failed to compute test metrics for candidate best model: {e}",
                 )
+
+        # ------------------------------------------------------------------
+        # C) Commit as best model only if test R² improves
+        # ------------------------------------------------------------------
+        if test_metrics is not None and r2 > BEST_R2:
+            BEST_R2 = r2
+
+            # Save model and export ONNX
+            os.makedirs("models", exist_ok=True)
+            save_path = os.path.join("models", "ANN_best_intermediate_model.pt")
+            torch.save(best_model_full.state_dict(), save_path)
+            send_update(update_queue, "best_model_path", save_path)
+            print(" (New Best Intermediate Model saved from full-data training)")
+
+            intermediate_onnx_path = None
+            try:
+                intermediate_onnx_path = export_to_onnx(
+                    best_model_full,
+                    dataset,
+                    os.path.join("models", "ANN_best_intermediate_model"),
+                )
+                send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
+                print(" (New Best Intermediate Model saved in PT and ONNX)")
+            except Exception as e:
+                send_update(
+                    update_queue,
+                    "log_messages",
+                    f"Failed to export intermediate ONNX model: {e}",
+                )
+                print(
+                    " (New Best Intermediate Model saved in PT only. ONNX export failed: "
+                    f"{e})"
+                )
+
+            # Send metrics/logs to UI for accepted best model
+            send_update(update_queue, "live_best_test_metrics", test_metrics)
+            send_update(update_queue, "best_intermediate_r2", r2)
+            send_update(update_queue, "best_intermediate_nmae", test_metrics["NMAE"])
+            send_update(update_queue, "best_intermediate_accuracy", test_metrics["Accuracy"])
+            send_update(
+                update_queue,
+                "log_messages",
+                (
+                    f"New best model found based on TEST R²={r2:.4f}. "
+                    f"(CV loss={avg_loss:.6f})"
+                ),
+            )
+        else:
+            send_update(
+                update_queue,
+                "log_messages",
+                (
+                    f"Candidate trial improved CV loss to {avg_loss:.6f} "
+                    f"but test R²={r2:.4f} did not beat current best R²={BEST_R2:.4f}. "
+                    "Keeping previous best model."
+                ),
+            )
 
     # This is the value Optuna will minimize
     return avg_loss
@@ -430,6 +461,9 @@ def optimization(dataset, dataset_test, config, update_queue: queue.Queue, st_st
     # (These initial resets are only truly necessary for a new run, but setting them 
     # here ensures the UI starts with a clean slate unless resuming.)
     if not is_resume:
+        global BEST_CV_LOSS, BEST_R2
+        BEST_CV_LOSS = float("inf")
+        BEST_R2 = -float("inf")
         send_update(update_queue, 'best_loss_so_far', float('inf'))
         send_update(update_queue, 'best_params_so_far', {})
         send_update(update_queue, 'best_onnx_path', None)

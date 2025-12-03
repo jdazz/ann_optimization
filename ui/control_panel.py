@@ -268,12 +268,26 @@ def render_intermediate_download(best_model_exists):
                 model_data = f.read()
             
             if len(model_data) > 0:
+                best_onnx_path = st.session_state.get("best_onnx_path")
                 with st.expander("Download Intermediate Model"):
-                    st.download_button(
-                        label="Download Best .pt Model",
-                        data=model_data,
-                        file_name="best_intermediate.pt",
-                        mime="application/octet-stream"
-                    )
+                    dl_col1, dl_col2 = st.columns(2)
+                    with dl_col1:
+                        st.download_button(
+                            label="Download best .pt model",
+                            data=model_data,
+                            file_name="best_intermediate.pt",
+                            mime="application/octet-stream"
+                        )
+                    with dl_col2:
+                        if best_onnx_path and os.path.exists(best_onnx_path):
+                            with open(best_onnx_path, "rb") as f_onnx:
+                                st.download_button(
+                                    label="Download best .onnx model",
+                                    data=f_onnx.read(),
+                                    file_name="best_intermediate.onnx",
+                                    mime="application/octet-stream"
+                                )
+                        else:
+                            st.info("ONNX for best model not available yet.")
         except Exception:
             pass
