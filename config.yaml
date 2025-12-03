@@ -1,5 +1,6 @@
 cross_validation:
   kfold: 5
+  test_split_ratio: 0.05
   output_variables:
   - consume
   testing_path: data/training.parquet
@@ -7,16 +8,18 @@ cross_validation:
   standardize_features: false
 display:
   show_plot: false
+  show_prediction_plot: true
+  show_optuna_plots: true
 generate_plot: false
 hyperparameter_search_space:
   batch_size:
     low: 16
-    high: 246
+    high: 37
   epochs:
-    low: 10
-    high: 300
+    low: 50
+    high: 450
   learning_rate:
-    low: 0.0006760829753919819
+    low: 0.015848931924611134
     high: 0.1
   n_samples: 10
   optimizer_name:
@@ -29,15 +32,13 @@ network:
   activation_functions:
     choices:
     - ReLU
-    - Tanh
-    - Sigmoid
   bias_initialization: zeros
   hidden_layers:
     low: 1
-    high: 3
+    high: 2
   hidden_neurons:
     low: 16
-    high: 80
+    high: 68
   weight_initialization: xavier_uniform
 sampler:
   type: TPESampler
@@ -50,5 +51,11 @@ targets:
 variables:
   input_names: 'distance
 
-    speed'
+    speed
+
+    temp_inside
+
+    temp_outside
+
+    AC'
   output_names: consume
