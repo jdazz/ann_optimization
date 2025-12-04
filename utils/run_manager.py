@@ -44,6 +44,32 @@ def derive_dataset_name(dataset_train, fallback: str = "dataset") -> str:
     return _sanitize_name(candidate)
 
 
+def derive_run_label(
+    train_filename: Optional[str],
+    test_filename: Optional[str] = None,
+    fallback: str = "dataset",
+) -> str:
+    """
+    Build a filesystem-safe label from the uploaded train/test filenames.
+    Example: train.csv + test.csv -> "train_test".
+    If the test file is missing, only the train filename is used.
+    """
+    parts = []
+
+    for name in (train_filename, test_filename):
+        if not name:
+            continue
+        base = os.path.splitext(str(name))[0]
+        sanitized = _sanitize_name(base)
+        if sanitized:
+            parts.append(sanitized)
+
+    if not parts:
+        return _sanitize_name(fallback)
+
+    return "_".join(parts)
+
+
 def get_run_paths(base_dir: str, dataset_name: str, config_hash: str, status: str) -> str:
     """Build run dir path with status suffix."""
     run_id = f"{dataset_name}__{config_hash}"
@@ -195,7 +221,12 @@ def write_value_file(run_dir: str, filename: str, value):
             if filename == "best_metrics.json":
                 value = {
                     k: value.get(k)
-                    for k in ("NMAE", "R2", "Accuracy")
+                    for k in (
+                        "NMAE",
+                        "R2",
+                        "Accuracy",
+                        "best_cv_loss",
+                    )
                     if k in value
                 }
             with open(path, "w") as f:
@@ -224,11 +255,13 @@ def read_value_file(run_dir: str, filename: str):
             data = json.loads(content)
             # Normalize best_metrics to allowed keys only
             if filename == "best_metrics.json" and isinstance(data, dict):
-                data = {
-                    k: data.get(k)
-                    for k in ("NMAE", "R2", "Accuracy")
-                    if k in data
+                allowed_keys = {
+                    "NMAE",
+                    "R2",
+                    "Accuracy",
+                    "best_cv_loss",
                 }
+                data = {k: data.get(k) for k in allowed_keys if k in data}
             return data
         except Exception:
             try:
@@ -237,6 +270,28 @@ def read_value_file(run_dir: str, filename: str):
                 return content
     except Exception:
         return None
+
+
+def update_best_metrics(run_dir: str, updates: Dict):
+    """
+    Merge metric updates into best_metrics.json to avoid scattering separate files.
+    Only whitelisted keys are persisted.
+    """
+    if not run_dir:
+        return
+    allowed_keys = {
+        "NMAE",
+        "R2",
+        "Accuracy",
+        "best_cv_loss",
+    }
+    existing = read_value_file(run_dir, "best_metrics.json")
+    if not isinstance(existing, dict):
+        existing = {}
+    for k, v in updates.items():
+        if k in allowed_keys:
+            existing[k] = v
+    write_value_file(run_dir, "best_metrics.json", existing)
 
 
 def zip_run_dir(run_dir: str) -> Optional[str]:

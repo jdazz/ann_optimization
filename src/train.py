@@ -6,6 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import KFold
 import optuna
 import numpy as np
+import pandas as pd
 import os
 # from src.model import define_net_regression # Assuming this is correctly imported
 import yaml
@@ -19,6 +20,8 @@ from src.dataset import Dataset
 from src.model import define_net_regression
 from utils.save_onnx import export_to_onnx
 from src.model_test import test as test_model
+from utils.save_scaler import save_scaler_to_json
+from utils.run_manager import append_run_log, update_best_metrics, zip_run_dir
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -90,10 +93,16 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     """
     global BEST_MODEL_STATE, BEST_LOSS, TRIALS_DONE, BEST_CV_LOSS, BEST_R2
     TRIALS_DONE += 1
+    # Local logger that writes to both queue and summary.txt on disk.
+    # This keeps summary.txt updated even if the Streamlit page reloads and
+    # misses queue processing events.
+    def log_and_record(message: str):
+        send_update(update_queue, "log_messages", message)
+        append_run_log(run_dir, str(message))
 
     print(f"\nTrial {trial.number}: ", end="")
+    log_and_record(f"Trial {trial.number} started.")
 
-    # -------------------------------------------------------------------------
     # 1. Basic setup
     # -------------------------------------------------------------------------
     n_input_params = dataset.n_input_params
@@ -221,10 +230,8 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         # Notify UI about new best CV loss and params
         # send_update(update_queue, "best_loss_so_far", avg_loss)
         # send_update(update_queue, "best_params_so_far", trial.params)
-        send_update(
-            update_queue,
-            "log_messages",
-            f"New best CV loss: {avg_loss:.6f}. Retraining candidate best model on full training data...",
+        log_and_record(
+            f"New best CV loss: {avg_loss:.6f}. Retraining candidate best model on full training data..."
         )
 
         # ------------------------------------------------------------------
@@ -235,10 +242,8 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
 
         if n_samples < 2:
             # Pathological small dataset: skip retrain to avoid BN issues
-            send_update(
-                update_queue,
-                "log_messages",
-                "Training set has fewer than 2 samples. Skipping full-data retrain for this best model.",
+            log_and_record(
+                "Training set has fewer than 2 samples. Skipping full-data retrain for this best model."
             )
             best_model_full = model_template  # fall back to template / last fold
         else:
@@ -255,10 +260,8 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
                 config=config,
             )
 
-            send_update(
-                update_queue,
-                "log_messages",
-                "Full-data training for new best model completed (via train_final_model).",
+            log_and_record(
+                "Full-data training for new best model completed (via train_final_model)."
             )
 
         # ------------------------------------------------------------------
@@ -398,23 +401,20 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         save_path = os.path.join(run_dir, "best_model.pt")
         torch.save(best_model_full.state_dict(), save_path)
         send_update(update_queue, "best_model_path", save_path)
+        append_run_log(run_dir, f"[best_model_saved] {save_path}")
         print(" (New Best Intermediate Model saved from full-data training)")
 
         intermediate_onnx_path = None
         try:
-                intermediate_onnx_path = export_to_onnx(
-                    best_model_full,
-                    dataset,
-                    os.path.join(run_dir, "best_model"),
-                )
-                send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
-                print(" (New Best Intermediate Model saved in PT and ONNX)")
-        except Exception as e:
-            send_update(
-                update_queue,
-                "log_messages",
-                f"Failed to export intermediate ONNX model: {e}",
+            intermediate_onnx_path = export_to_onnx(
+                best_model_full,
+                dataset,
+                os.path.join(run_dir, "best_model"),
             )
+            send_update(update_queue, "best_onnx_path", intermediate_onnx_path)
+            print(" (New Best Intermediate Model saved in PT and ONNX)")
+        except Exception as e:
+            log_and_record(f"Failed to export intermediate ONNX model: {e}")
             print(
                 " (New Best Intermediate Model saved in PT only. ONNX export failed: "
                 f"{e})"
@@ -426,19 +426,70 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
             send_update(update_queue, "best_intermediate_r2", r2)
             send_update(update_queue, "best_intermediate_nmae", test_metrics["NMAE"])
             send_update(update_queue, "best_intermediate_accuracy", test_metrics["Accuracy"])
-            send_update(
-                update_queue,
-                "log_messages",
-                (
-                    "New best model found. "
-                    
-                ),
+            log_and_record("New best model found.")
+            # Persist metrics directly from the worker to survive UI reloads
+            update_best_metrics(
+                run_dir,
+                {
+                    "NMAE": test_metrics.get("NMAE"),
+                    "R2": test_metrics.get("R2"),
+                    "Accuracy": test_metrics.get("Accuracy"),
+                    "best_cv_loss": avg_loss,
+                },
             )
+            # Persist scaler parameters if standardization was used
+            try:
+                if getattr(dataset, "should_standardize", False) and getattr(dataset, "scaler", None):
+                    scaler_json = save_scaler_to_json(dataset.scaler, getattr(dataset, "input_vars", []))
+                    if scaler_json:
+                        scaler_path = os.path.join(run_dir, "scaler_params.json")
+                        with open(scaler_path, "w") as f:
+                            f.write(scaler_json)
+                        append_run_log(run_dir, f"[scaler_params] {scaler_path}")
+                        send_update(update_queue, "scaler_params_path", scaler_path)
+            except Exception as e:
+                log_and_record(f"Failed to save scaler parameters: {e}")
         else:
-            send_update(
-                update_queue,
-                "log_messages",
-                f"New best model chosen by CV loss ({avg_loss:.6f}). Test metrics unavailable.",
+            log_and_record(
+                f"New best model chosen by CV loss ({avg_loss:.6f}). Test metrics unavailable."
+            )
+            update_best_metrics(run_dir, {"best_cv_loss": avg_loss})
+
+        # Persist predictions of the best model to CSV in the current run folder
+        if test_metrics is not None:
+            try:
+                y_pred_arr = np.array(test_metrics.get("y_pred", []))
+                y_true_arr = np.array(test_metrics.get("y_true", []))
+                if y_pred_arr.size > 0 and y_true_arr.size > 0:
+                    y_pred_arr = y_pred_arr.reshape(len(y_pred_arr), -1)
+                    y_true_arr = y_true_arr.reshape(len(y_true_arr), -1)
+                    min_len = min(len(y_pred_arr), len(y_true_arr))
+                    y_pred_arr = y_pred_arr[:min_len]
+                    y_true_arr = y_true_arr[:min_len]
+
+                    data = {}
+                    for idx in range(y_true_arr.shape[1]):
+                        data[f"y_true_{idx+1}"] = y_true_arr[:, idx]
+                    for idx in range(y_pred_arr.shape[1]):
+                        data[f"y_pred_{idx+1}"] = y_pred_arr[:, idx]
+
+                    preds_df = pd.DataFrame(data)
+                    preds_path = os.path.join(run_dir, "best_predictions.csv")
+                    preds_df.to_csv(preds_path, index=False)
+                    append_run_log(run_dir, f"[best_predictions_csv] {preds_path}")
+                    send_update(update_queue, "best_predictions_path", preds_path)
+            except Exception as e:
+                log_and_record(f"Failed to save best predictions CSV: {e}")
+        else:
+            # Still persist the best CV loss even if we lack test metrics
+            update_best_metrics(run_dir, {"best_cv_loss": avg_loss})
+
+        # Zip the current run folder so it is downloadable even after reloads
+        zip_path = zip_run_dir(run_dir)
+        if zip_path:
+            send_update(update_queue, "intermediate_zip_path", zip_path)
+            log_and_record(
+                f"Run artifacts zipped for download: {os.path.basename(zip_path)}"
             )
 
         # --- Alternative selection by test R² (kept for reference) ---
@@ -450,6 +501,7 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         #     ... (log that R² did not improve)
 
     # This is the value Optuna will minimize
+    log_and_record(f"Trial {trial.number} finished. Loss: {avg_loss:.6f}")
     return avg_loss
 
 def optimization(

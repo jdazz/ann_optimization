@@ -20,6 +20,7 @@ from utils.run_manager import (
     write_summary,
     append_run_log,
     read_value_file,
+    zip_run_dir,
 )
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,6 +34,7 @@ def run_training_pipeline(
     stop_event: threading.Event,
     is_resume: bool = False,
     optuna_study=None,
+    dataset_label: str | None = None,
 ):
     """
     Background training pipeline.
@@ -44,6 +46,15 @@ def run_training_pipeline(
     """
 
     started_at = datetime.utcnow().isoformat()
+
+    def cleanup_in_progress_zip(path: str):
+        """Remove any IN_PROGRESS zip for the given path."""
+        zip_path = f"{path}.zip"
+        try:
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+        except Exception:
+            pass
 
     def send_update(key, value):
         """Helper to push updates to the main Streamlit thread."""
@@ -77,7 +88,7 @@ def run_training_pipeline(
     # ------------------------------------------------------------------
     # Run directory setup (dataset + config hash)
     # ------------------------------------------------------------------
-    dataset_name = derive_dataset_name(dataset_train)
+    dataset_name = dataset_label or derive_dataset_name(dataset_train)
     config_hash = make_config_hash(config)
     base_runs = os.path.join(os.getcwd(), "runs")
     run_dir, run_id = start_run_folder(base_runs, dataset_name, config_hash)
@@ -200,6 +211,7 @@ def run_training_pipeline(
             # Finalize run folder first, then write summary + append final metrics line
             finished_at = datetime.utcnow().isoformat()
             final_dir = finalize_run_folder(run_dir, "DONE")
+            cleanup_in_progress_zip(run_dir)
             # Update paths to final_dir
             final_model_path = os.path.join(final_dir, "best_model.pt")
             final_onnx_path = os.path.join(final_dir, "best_model.onnx")
@@ -240,6 +252,15 @@ def run_training_pipeline(
                 )
                 # This append is intentionally LAST, so this line is at the bottom.
                 append_run_log(final_dir, final_line)
+
+            # Zip final DONE folder for download resiliency after reloads
+            final_zip = zip_run_dir(final_dir)
+            if final_zip:
+                send_update("final_zip_path", final_zip)
+                send_update(
+                    "log_messages",
+                    f"Run artifacts zipped (DONE): {os.path.basename(final_zip)}",
+                )
 
             send_update("current_run_dir", final_dir)
             return
@@ -297,6 +318,7 @@ def run_training_pipeline(
         # Finalize run folder and summary
         finished_at = datetime.utcnow().isoformat()
         final_dir = finalize_run_folder(run_dir, "DONE")
+        cleanup_in_progress_zip(run_dir)
         final_model_path = os.path.join(final_dir, "best_model.pt")
         final_onnx_path = os.path.join(final_dir, "best_model.onnx")
         send_update("current_run_dir", final_dir)
@@ -355,6 +377,15 @@ def run_training_pipeline(
             # Again, this append is LAST so it becomes the final line.
             append_run_log(final_dir, final_line)
 
+        # Zip final DONE folder for download resiliency after reloads
+        final_zip = zip_run_dir(final_dir)
+        if final_zip:
+            send_update("final_zip_path", final_zip)
+            send_update(
+                "log_messages",
+                f"Run artifacts zipped (DONE): {os.path.basename(final_zip)}",
+            )
+
     except Exception as e:
         # Use traceback to get better error detail
         full_traceback = traceback.format_exc()
@@ -375,6 +406,7 @@ def run_training_pipeline(
             notes=str(e),
         )
         finalize_run_folder(run_dir, "FAILED")
+        cleanup_in_progress_zip(run_dir)
 
     finally:
         send_update("log_messages", "--- Training thread finished ---")

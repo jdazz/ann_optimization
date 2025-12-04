@@ -4,7 +4,7 @@ import streamlit as st
 import queue
 import os
 
-from utils.run_manager import append_run_log, write_value_file
+from utils.run_manager import append_run_log, update_best_metrics, write_value_file
 
 
 def process_queue_updates() -> bool:
@@ -66,7 +66,14 @@ def process_queue_updates() -> bool:
             run_dir = ss.get("current_run_dir")
             if value:
                 append_run_log(run_dir, f"[best_metrics] {value}")
-                write_value_file(run_dir, "best_metrics.json", value)
+                update_best_metrics(
+                    run_dir,
+                    {
+                        "NMAE": value.get("NMAE"),
+                        "R2": value.get("R2"),
+                        "Accuracy": value.get("Accuracy"),
+                    },
+                )
 
         elif key == "best_loss_so_far":
             try:
@@ -75,7 +82,7 @@ def process_queue_updates() -> bool:
                 ss.best_loss_so_far = value
             run_dir = ss.get("current_run_dir")
             append_run_log(run_dir, f"[best_cv_loss] {value}")
-            write_value_file(run_dir, "best_cv_loss.txt", value)
+            update_best_metrics(run_dir, {"best_cv_loss": value})
 
         elif key == "best_params_so_far":
             ss.best_params_so_far = value
@@ -87,8 +94,6 @@ def process_queue_updates() -> bool:
             ss[key] = value
             run_dir = ss.get("current_run_dir")
             append_run_log(run_dir, f"[{key}] {value}")
-            filename = f"{key}.txt"
-            write_value_file(run_dir, filename, value)
 
         # Add other explicit keys here if you like, e.g. best_loss_so_far, etc.
         # elif key == "best_loss_so_far":

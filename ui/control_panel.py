@@ -13,7 +13,12 @@ from utils.config_utils import save_config, load_config
 from utils.state_manager import initialize_run_state, reset_resumable_flag
 from utils.data_utils import initialize_training_dataset
 from utils.save_scaler import save_scaler_to_json
-from utils.run_manager import derive_dataset_name, make_config_hash, find_existing_run, finalize_run_folder
+from utils.run_manager import (
+    derive_run_label,
+    make_config_hash,
+    find_existing_run,
+    finalize_run_folder,
+)
 from core.pipeline import run_training_pipeline 
 
 CONFIG_PATH = "config.yaml"
@@ -106,7 +111,10 @@ def handle_run_pipeline(is_resume: bool):
     # 3. Initialize Dataset objects (train + test)
     dataset_train, dataset_test = initialize_training_dataset(train_path, test_path)
     st.session_state.dataset_input_vars = dataset_train.input_vars
-    st.session_state.dataset_name = derive_dataset_name(dataset_train)
+    train_filename = persistent_train_file.name if persistent_train_file else None
+    test_filename = persistent_test_file.name if persistent_test_file else None
+    run_label = derive_run_label(train_filename, test_filename, fallback="dataset")
+    st.session_state.dataset_name = run_label
     st.session_state.config_hash = make_config_hash(st.session_state.config)
 
     # 4. Standardization
@@ -143,6 +151,7 @@ def handle_run_pipeline(is_resume: bool):
             stop_event,                    # stop signal
             is_resume,                     # resume flag
             st.session_state.get("optuna_study"),  # existing study (for resume)
+            run_label,                     # run folder name derived from uploaded files
         ),
         name=f"training_worker_{st.session_state.dataset_name}__{st.session_state.config_hash}",
         daemon=True,
@@ -159,6 +168,7 @@ def handle_run_pipeline(is_resume: bool):
 def handle_stop_training():
     """Logic executed when the Stop button is pressed."""
     ss = st.session_state
+    runs_base = os.path.join(os.getcwd(), "runs")
 
     # Try to recover missing stop_event/training_thread (after reload) so we can signal the worker
     if not ss.get("stop_event"):
@@ -189,6 +199,26 @@ def handle_stop_training():
                 os.path.dirname(run_dir),
                 os.path.basename(run_dir).rsplit("__", 1)[0] + "__ABORTED",
             )
+        except Exception:
+            pass
+
+    # Rename any other lingering __IN_PROGRESS folders to __ABORTED
+    if os.path.isdir(runs_base):
+        try:
+            for name in os.listdir(runs_base):
+                if name.endswith("__IN_PROGRESS"):
+                    path = os.path.join(runs_base, name)
+                    finalize_run_folder(path, "ABORTED")
+                elif name.endswith("__IN_PROGRESS.zip"):
+                    old_path = os.path.join(runs_base, name)
+                    new_path = os.path.join(
+                        runs_base,
+                        name.replace("__IN_PROGRESS.zip", "__ABORTED.zip"),
+                    )
+                    try:
+                        os.replace(old_path, new_path)
+                    except Exception:
+                        pass
         except Exception:
             pass
 
@@ -332,10 +362,38 @@ def render_live_status(col, best_model_exists):
         # Best CV loss + live best test metrics
         # ---------------------------------------------------------------------
         run_dir = ss.get("current_run_dir")
+        # Resolve to an existing folder (handles IN_PROGRESS renamed to DONE after reload)
+        if run_dir and not os.path.isdir(run_dir):
+            base = os.path.dirname(run_dir)
+            prefix = os.path.basename(run_dir).rsplit("__", 1)[0]
+            for status_suffix in ("IN_PROGRESS", "DONE", "ABORTED", "FAILED"):
+                candidate = os.path.join(base, f"{prefix}__{status_suffix}")
+                if os.path.isdir(candidate):
+                    run_dir = candidate
+                    ss.current_run_dir = candidate
+                    break
 
-        best_loss = read_value_file(run_dir, "best_cv_loss.txt")
-        best_r2 = read_value_file(run_dir, "best_intermediate_r2.txt")
-        best_nmae = read_value_file(run_dir, "best_intermediate_nmae.txt")
+        metrics_file = read_value_file(run_dir, "best_metrics.json")
+        best_loss = None
+        best_r2 = None
+        best_nmae = None
+
+        if isinstance(metrics_file, dict):
+            best_loss = metrics_file.get("best_cv_loss")
+            best_r2 = metrics_file.get("R2")
+            best_nmae = metrics_file.get("NMAE")
+            # Refresh session snapshots so reloads stay in sync
+            ss.best_loss_so_far = best_loss if best_loss is not None else ss.get("best_loss_so_far")
+            ss.best_intermediate_r2 = best_r2 if best_r2 is not None else ss.get("best_intermediate_r2")
+            ss.best_intermediate_nmae = best_nmae if best_nmae is not None else ss.get("best_intermediate_nmae")
+            if "Accuracy" in metrics_file:
+                ss.best_intermediate_accuracy = metrics_file.get("Accuracy")
+            # Also refresh live_best_test_metrics for display elsewhere
+            ss.live_best_test_metrics = {
+                "NMAE": metrics_file.get("NMAE"),
+                "R2": metrics_file.get("R2"),
+                "Accuracy": metrics_file.get("Accuracy"),
+            }
 
         if best_loss is None:
             best_loss = ss.get("best_loss_so_far")
@@ -412,6 +470,14 @@ def render_intermediate_download(best_model_exists):
             
             if len(model_data) > 0:
                 best_onnx_path = st.session_state.get("best_onnx_path")
+                zip_path = st.session_state.get("intermediate_zip_path")
+                if not zip_path:
+                    run_dir = st.session_state.get("current_run_dir")
+                    if run_dir:
+                        candidate_zip = f"{run_dir}.zip"
+                        if os.path.exists(candidate_zip):
+                            zip_path = candidate_zip
+
                 with st.expander("Download Intermediate Model"):
                     dl_col1, dl_col2 = st.columns(2)
                     with dl_col1:
@@ -432,5 +498,15 @@ def render_intermediate_download(best_model_exists):
                                 )
                         else:
                             st.info("ONNX for best model not available yet.")
+                    if zip_path and os.path.exists(zip_path):
+                        with open(zip_path, "rb") as f_zip:
+                            st.download_button(
+                                label="Download full run (zip)",
+                                data=f_zip.read(),
+                                file_name=os.path.basename(zip_path),
+                                mime="application/zip",
+                            )
+                    else:
+                        st.info("Run archive not available yet.")
         except Exception:
             pass

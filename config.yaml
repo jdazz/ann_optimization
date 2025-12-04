@@ -1,6 +1,6 @@
 cross_validation:
   kfold: 5
-  test_split_ratio: 0.05
+  test_split_ratio: 0.2
   output_variables:
   - consume
   testing_path: data/training.parquet

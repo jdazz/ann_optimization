@@ -8,6 +8,7 @@ import zipfile
 import threading
 from collections import deque
 import queue
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -31,6 +32,7 @@ from utils.data_utils import detect_and_handle_data_input
 from utils.run_manager import (
     make_config_hash,
     derive_dataset_name,
+    derive_run_label,
     find_existing_run,
     find_any_in_progress,
     read_value_file,
@@ -106,14 +108,13 @@ def hydrate_from_disk():
         try:
             cfg_hash = make_config_hash(st.session_state.config)
             dataset_name = st.session_state.get("dataset_name")
+
             if not dataset_name:
                 train_file = st.session_state.get("persistent_train_file_obj")
-                if train_file and hasattr(train_file, "name"):
-                    dataset_name = derive_dataset_name(
-                        type("Tmp", (), {"name": train_file.name})()
-                    )
-            if not dataset_name:
-                dataset_name = "dataset"
+                test_file = st.session_state.get("persistent_test_file_obj")
+                train_name = getattr(train_file, "name", None)
+                test_name = getattr(test_file, "name", None)
+                dataset_name = derive_run_label(train_name, test_name, fallback="dataset")
 
             status_existing, path_existing = find_existing_run("runs", dataset_name, cfg_hash)
             if path_existing:
@@ -132,20 +133,28 @@ def hydrate_from_disk():
     # -----------------------------
     # Hydrate metrics from files
     # -----------------------------
-    st.session_state.best_loss_so_far = (
-        read_value_file(path, "best_cv_loss.txt") or float("inf")
-    )
-    st.session_state.best_intermediate_r2 = read_value_file(
-        path, "best_intermediate_r2.txt"
-    )
-    st.session_state.best_intermediate_nmae = read_value_file(
-        path, "best_intermediate_nmae.txt"
-    )
-    st.session_state.best_intermediate_accuracy = read_value_file(
-        path, "best_intermediate_accuracy.txt"
-    )
+    metrics_file = read_value_file(path, "best_metrics.json")
+    st.session_state.best_loss_so_far = float("inf")
+    st.session_state.best_intermediate_r2 = None
+    st.session_state.best_intermediate_nmae = None
+    st.session_state.best_intermediate_accuracy = None
 
-    best_metrics = read_value_file(path, "best_metrics.json")
+    if isinstance(metrics_file, dict):
+        st.session_state.best_loss_so_far = metrics_file.get(
+            "best_cv_loss", st.session_state.best_loss_so_far
+        )
+        st.session_state.best_intermediate_r2 = metrics_file.get("R2")
+        st.session_state.best_intermediate_nmae = metrics_file.get("NMAE")
+        st.session_state.best_intermediate_accuracy = metrics_file.get("Accuracy")
+        # Keep live_best_test_metrics aligned for UI display after reloads
+        st.session_state.live_best_test_metrics = {
+            "NMAE": metrics_file.get("NMAE"),
+            "R2": metrics_file.get("R2"),
+            "Accuracy": metrics_file.get("Accuracy"),
+        }
+    else:
+        metrics_file = None
+    best_metrics = metrics_file
     if best_metrics:
         # Allow either already-parsed or raw JSON string
         if isinstance(best_metrics, str):
@@ -391,17 +400,34 @@ archives = list_run_archives()
 if archives:
     st.subheader("Completed Runs (ZIP)")
     for name, path in archives:
-        try:
-            with open(path, "rb") as f:
-                data = f.read()
-            st.download_button(
-                label=f"Download {name}",
-                data=data,
-                file_name=name,
-                mime="application/zip",
-            )
-        except Exception:
-            st.write(f"{name} (unreadable)")
+        row_cols = st.columns([6, 1])
+        with row_cols[0]:
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+                st.download_button(
+                    label=f"Download {name}",
+                    data=data,
+                    file_name=name,
+                    mime="application/zip",
+                    key=f"dl_{name}",
+                )
+            except Exception:
+                st.write(f"{name} (unreadable)")
+        with row_cols[1]:
+            if st.button("✕", key=f"del_{name}", help="Delete this archive"):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+                # Also delete any folder with the same base name (without .zip)
+                base_name = os.path.splitext(path)[0]
+                try:
+                    if os.path.isdir(base_name):
+                        shutil.rmtree(base_name, ignore_errors=True)
+                except Exception:
+                    pass
+                st.rerun()
 else:
     st.info("No completed run archives found yet.")
 
