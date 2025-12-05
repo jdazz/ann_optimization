@@ -14,14 +14,14 @@ generate_plot: false
 hyperparameter_search_space:
   batch_size:
     low: 16
-    high: 37
+    high: 100
   epochs:
     low: 50
     high: 450
   learning_rate:
     low: 0.015848931924611134
     high: 0.1
-  n_samples: 10
+  n_samples: 200
   optimizer_name:
     choices:
     - Adam
@@ -35,10 +35,10 @@ network:
   bias_initialization: zeros
   hidden_layers:
     low: 1
-    high: 2
+    high: 4
   hidden_neurons:
     low: 16
-    high: 68
+    high: 122
   weight_initialization: xavier_uniform
 sampler:
   type: TPESampler
@@ -49,13 +49,13 @@ targets:
   nmae_target: 0.08
   r2_target: 0.99
 variables:
-  input_names: 'distance
+  input_names: 'EVC_p_Offset
 
-    speed
+    relSpeed
 
-    temp_inside
+    load
 
-    temp_outside
+    EWG_p_Offset
 
-    AC'
-  output_names: consume
+    T_amb'
+  output_names: FuelConsumption

@@ -1,0 +1,431 @@
+Run directory initialized at /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS
+Starting HPO optimization...
+Trial 0 started.
+Loading separate training and testing files.
+No categorical input features found. Skipping One-Hot Encoding.
+Processing separate testing file to align columns and encoding...
+No categorical input features found. Skipping One-Hot Encoding.
+Separate testing file loaded and processed successfully. Shape: (238, 200)
+Features standardized successfully (Fitted and Transformed).
+Run directory initialized at /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS
+Starting HPO optimization...
+[best_cv_loss] inf
+[best_intermediate_r2] None
+[best_intermediate_nmae] None
+[best_intermediate_accuracy] None
+Starting new Optuna study for 100 trials.
+Trial 0 started.
+New best CV loss: 116.002172. Retraining candidate best model on full training data...
+New best CV loss: 116.002172. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_model.pt
+New best model found.
+[scaler_params] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/scaler_params.json
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 0 finished. Loss: 116.002172
+Trial 1 started.
+Full-data training for new best model completed (via train_final_model).
+Applied fitted scaler to test data for live metrics.
+[best_cv_loss] 116.00217230660576
+[best_intermediate_r2] -0.0533214807510376
+[best_intermediate_nmae] 0.11530851874552359
+[best_intermediate_accuracy] 48.319327731092436
+New best model found.
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 0 finished. Loss: 116.002172
+Trial 0 finished. Loss: 116.002172
+Trial 1 started.
+New best CV loss: 102.131205. Retraining candidate best model on full training data...
+New best CV loss: 102.131205. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_model.pt
+New best model found.
+[scaler_params] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/scaler_params.json
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_predictions.csv
+Full-data training for new best model completed (via train_final_model).
+Applied fitted scaler to test data for live metrics.
+[best_cv_loss] 102.1312047322591
+[best_intermediate_r2] -0.009740471839904785
+[best_intermediate_nmae] 0.11162980246391596
+[best_intermediate_accuracy] 53.78151260504202
+New best model found.
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 1 finished. Loss: 102.131205
+Trial 2 started.
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 1 finished. Loss: 102.131205
+Trial 1 finished. Loss: 102.131205
+Trial 2 started.
+New best CV loss: 84.203162. Retraining candidate best model on full training data...
+New best CV loss: 84.203162. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_model.pt
+New best model found.
+[scaler_params] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/scaler_params.json
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 2 finished. Loss: 84.203162
+Trial 3 started.
+Full-data training for new best model completed (via train_final_model).
+Applied fitted scaler to test data for live metrics.
+[best_cv_loss] 84.20316222054619
+[best_intermediate_r2] 0.2517724633216858
+[best_intermediate_nmae] 0.09578091686761472
+[best_intermediate_accuracy] 61.76470588235294
+New best model found.
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 2 finished. Loss: 84.203162
+Trial 2 finished. Loss: 84.203162
+Trial 3 started.
+Trial 3 finished. Loss: 88.836351
+Trial 4 started.
+Trial 3 finished. Loss: 88.836351
+Trial 3 finished. Loss: 88.836351
+Trial 4 started.
+Trial 4 finished. Loss: 112.199876
+Trial 5 started.
+Trial 6 started.
+Trial 7 started.
+Trial 8 started.
+Trial 4 finished. Loss: 112.199876
+Trial 4 finished. Loss: 112.199876
+Trial 5 started.
+Trial 5 pruned.
+Trial 6 started.
+Trial 6 pruned.
+Trial 7 started.
+Trial 7 pruned.
+Trial 8 started.
+Trial 9 started.
+Trial 10 started.
+Trial 8 pruned.
+Trial 9 started.
+Trial 9 pruned.
+Trial 10 started.
+Trial 10 finished. Loss: 92.763130
+Trial 11 started.
+Trial 10 finished. Loss: 92.763130
+Trial 10 finished. Loss: 92.763130
+Trial 11 started.
+Trial 12 started.
+Trial 11 pruned.
+Trial 12 started.
+New best CV loss: 83.800781. Retraining candidate best model on full training data...
+New best CV loss: 83.800781. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_model.pt
+New best model found.
+[scaler_params] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/scaler_params.json
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_test__cb80fa5fb8__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 12 finished. Loss: 83.800781
+Trial 13 started.
+Full-data training for new best model completed (via train_final_model).
+Applied fitted scaler to test data for live metrics.
+[best_cv_loss] 83.80078132629396
+[best_intermediate_r2] 0.2016656994819641
+[best_intermediate_nmae] 0.09909110136296069
+[best_intermediate_accuracy] 57.56302521008403
+New best model found.
+Run artifacts zipped for download: train_test__cb80fa5fb8__IN_PROGRESS.zip
+Trial 12 finished. Loss: 83.800781
+Trial 12 finished. Loss: 83.800781
+Trial 13 started.
+Trial 13 finished. Loss: 90.957496
+Trial 14 started.
+Trial 13 finished. Loss: 90.957496
+Trial 13 finished. Loss: 90.957496
+Trial 14 started.
+Trial 15 started.
+Trial 16 started.
+Trial 17 started.
+Trial 18 started.
+Trial 19 started.
+Trial 20 started.
+Trial 21 started.
+Trial 22 started.
+Trial 23 started.
+Trial 24 started.
+Trial 14 pruned.
+Trial 15 started.
+Trial 15 pruned.
+Trial 16 started.
+Trial 16 pruned.
+Trial 17 started.
+Trial 17 pruned.
+Trial 18 started.
+Trial 18 pruned.
+Trial 19 started.
+Trial 19 pruned.
+Trial 20 started.
+Trial 20 pruned.
+Trial 21 started.
+Trial 21 pruned.
+Trial 22 started.
+Trial 22 pruned.
+Trial 23 started.
+Trial 23 pruned.
+Trial 24 started.
+Trial 24 finished. Loss: 89.514592
+Trial 25 started.
+Trial 26 started.
+Trial 27 started.
+Trial 28 started.
+Trial 24 finished. Loss: 89.514592
+Trial 24 finished. Loss: 89.514592
+Trial 25 started.
+Trial 25 pruned.
+Trial 26 started.
+Trial 26 pruned.
+Trial 27 started.
+Trial 27 pruned.
+Trial 28 started.
+Trial 28 finished. Loss: 90.234663
+Trial 29 started.
+Trial 30 started.
+Trial 28 finished. Loss: 90.234663
+Trial 28 finished. Loss: 90.234663
+Trial 29 started.
+Trial 29 pruned.
+Trial 30 started.
+Trial 31 started.
+Trial 30 pruned.
+Trial 31 started.
+Trial 31 finished. Loss: 92.823379
+Trial 32 started.
+Trial 31 finished. Loss: 92.823379
+Trial 31 finished. Loss: 92.823379
+Trial 32 started.
+Trial 32 finished. Loss: 86.234960
+Trial 33 started.
+Trial 34 started.
+Trial 35 started.
+Trial 36 started.
+Trial 37 started.
+Trial 32 finished. Loss: 86.234960
+Trial 32 finished. Loss: 86.234960
+Trial 33 started.
+Trial 33 pruned.
+Trial 34 started.
+Trial 34 pruned.
+Trial 35 started.
+Trial 35 pruned.
+Trial 36 started.
+Trial 36 pruned.
+Trial 37 started.
+Trial 37 finished. Loss: 103.003872
+Trial 38 started.
+Trial 39 started.
+Trial 40 started.
+Trial 41 started.
+Trial 42 started.
+Trial 43 started.
+Trial 44 started.
+Trial 45 started.
+Trial 46 started.
+Trial 37 finished. Loss: 103.003872
+Trial 37 finished. Loss: 103.003872
+Trial 38 started.
+Trial 38 pruned.
+Trial 39 started.
+Trial 39 pruned.
+Trial 40 started.
+Trial 40 pruned.
+Trial 41 started.
+Trial 41 pruned.
+Trial 42 started.
+Trial 42 pruned.
+Trial 43 started.
+Trial 43 pruned.
+Trial 44 started.
+Trial 44 pruned.
+Trial 45 started.
+Trial 45 pruned.
+Trial 46 started.
+Trial 47 started.
+Trial 46 pruned.
+Trial 47 started.
+Trial 48 started.
+Trial 49 started.
+Trial 50 started.
+Trial 51 started.
+Trial 52 started.
+Trial 53 started.
+Trial 54 started.
+Trial 55 started.
+Trial 56 started.
+Trial 57 started.
+Trial 58 started.
+Trial 59 started.
+Trial 60 started.
+Trial 47 pruned.
+Trial 48 started.
+Trial 48 pruned.
+Trial 49 started.
+Trial 49 pruned.
+Trial 50 started.
+Trial 50 pruned.
+Trial 51 started.
+Trial 51 pruned.
+Trial 52 started.
+Trial 52 pruned.
+Trial 53 started.
+Trial 53 pruned.
+Trial 54 started.
+Trial 54 pruned.
+Trial 55 started.
+Trial 55 pruned.
+Trial 56 started.
+Trial 56 pruned.
+Trial 57 started.
+Trial 57 pruned.
+Trial 58 started.
+Trial 58 pruned.
+Trial 59 started.
+Trial 59 pruned.
+Trial 60 started.
+Trial 61 started.
+Trial 62 started.
+Trial 63 started.
+Trial 64 started.
+Trial 65 started.
+Trial 66 started.
+Trial 67 started.
+Trial 68 started.
+Trial 69 started.
+Trial 70 started.
+Trial 71 started.
+Trial 72 started.
+Trial 73 started.
+Trial 60 pruned.
+Trial 61 started.
+Trial 61 pruned.
+Trial 62 started.
+Trial 62 pruned.
+Trial 63 started.
+Trial 63 pruned.
+Trial 64 started.
+Trial 64 pruned.
+Trial 65 started.
+Trial 65 pruned.
+Trial 66 started.
+Trial 66 pruned.
+Trial 67 started.
+Trial 67 pruned.
+Trial 68 started.
+Trial 68 pruned.
+Trial 69 started.
+Trial 69 pruned.
+Trial 70 started.
+Trial 70 pruned.
+Trial 71 started.
+Trial 71 pruned.
+Trial 72 started.
+Trial 72 pruned.
+Trial 73 started.
+Trial 74 started.
+Trial 73 pruned.
+Trial 74 started.
+Trial 74 finished. Loss: 95.446330
+Trial 75 started.
+Trial 76 started.
+Trial 77 started.
+Trial 78 started.
+Trial 79 started.
+Trial 80 started.
+Trial 81 started.
+Trial 82 started.
+Trial 83 started.
+Trial 84 started.
+Trial 85 started.
+Trial 74 finished. Loss: 95.446330
+Trial 74 finished. Loss: 95.446330
+Trial 75 started.
+Trial 75 pruned.
+Trial 76 started.
+Trial 76 pruned.
+Trial 77 started.
+Trial 77 pruned.
+Trial 78 started.
+Trial 78 pruned.
+Trial 79 started.
+Trial 79 pruned.
+Trial 80 started.
+Trial 80 pruned.
+Trial 81 started.
+Trial 81 pruned.
+Trial 82 started.
+Trial 82 pruned.
+Trial 83 started.
+Trial 83 pruned.
+Trial 84 started.
+Trial 84 pruned.
+Trial 85 started.
+Trial 86 started.
+Trial 87 started.
+Trial 88 started.
+Trial 89 started.
+Trial 90 started.
+Trial 91 started.
+Trial 92 started.
+Trial 85 pruned.
+Trial 86 started.
+Trial 86 pruned.
+Trial 87 started.
+Trial 87 pruned.
+Trial 88 started.
+Trial 88 pruned.
+Trial 89 started.
+Trial 89 pruned.
+Trial 90 started.
+Trial 90 pruned.
+Trial 91 started.
+Trial 91 pruned.
+Trial 92 started.
+Trial 92 finished. Loss: 85.422498
+Trial 93 started.
+Trial 92 finished. Loss: 85.422498
+Trial 92 finished. Loss: 85.422498
+Trial 93 started.
+Trial 94 started.
+Trial 95 started.
+Trial 96 started.
+Trial 97 started.
+Trial 98 started.
+Trial 99 started.
+Optimization complete. Optuna study object saved for visualization.
+Using best intermediate model for final outputs (renamed to final).
+
+Dataset: train_test
+Config Hash: cb80fa5fb8
+Status: DONE
+Started: 2025-12-04T13:08:07.978870
+Finished: 2025-12-04T13:26:11.818226
+Best CV Loss: 83.80078132629396
+Test Metrics (best model on unseen data):
+  NMAE: 0.09909110136296069
+  R2: 0.2016656994819641
+  Accuracy: 57.56302521008403Final metrics on unseen data: r2score: 0.2016656994819641, NMA: 0.09909110136296069, accuracy: 57.56302521008403
+Trial 93 pruned.
+Trial 94 started.
+Trial 94 pruned.
+Trial 95 started.
+Trial 95 pruned.
+Trial 96 started.
+Trial 96 pruned.
+Trial 97 started.
+Trial 97 pruned.
+Trial 98 started.
+Trial 98 pruned.
+Trial 99 started.
+Trial 99 pruned.
+Optimization finished.
+Optimization complete. Optuna study object saved for visualization.
+Using best intermediate model for final outputs (renamed to final).
+Final test metrics — NMAE: 0.09909110136296069, R2: 0.2016656994819641, Accuracy: 57.56302521008403
+Run artifacts zipped (DONE): train_test__cb80fa5fb8__DONE.zip
+--- Training thread finished ---
+Features selected via '*': x805, x807, x334, x478, x254, x133, x196, x584, x199, x465, x547, x154, x32, x546, x352, x29, x72, x230, x436, x602, x760, x424, x180, x453, x686, x410, x2, x151, x231, x315, x319, x8, x528, x179, x437, x22, x639, x310, x668, x594, x63, x740, x388, x69, x831, x538, x822, x819, x349, x398, x370, x593, x220, x671, x40, x97, x82, x56, x613, x399, x194, x773, x720, x119, x703, x577, x564, x827, x27, x621, x181, x28, x824, x107, x455, x688, x582, x672, x270, x190, x371, x381, x367, x279, x526, x758, x105, x770, x213, x692, x610, x422, x292, x20, x189, x783, x374, x414, x84, x402, x537, x531, x34, x585, x559, x117, x778, x782, x23, x700, x288, x731, x479, x641, x16, x284, x295, x173, x88, x15, x278, x439, x64, x350, x419, x87, x784, x395, x385, x714, x342, x485, x113, x562, x814, x136, x209, x810, x659, x675, x572, x396, x5, x333, x165, x483, x660, x442, x491, x456, x163, x98, x94, x211, x648, x407, x66, x403, x346, x262, x99, x408, x684, x246, x504, x451, x65, x120, x252, x379, x630, x608, x769, x141, x589, x759, x240, x157, x498, x542, x121, x820, x110, x771, x614, x727, x646, x55, x811, x477, x148, x635, x285, x123, x470, x475, x734, x75, x721.
+No categorical input features found. Skipping One-Hot Encoding.
+Features standardized successfully (Transformed using provided scaler).

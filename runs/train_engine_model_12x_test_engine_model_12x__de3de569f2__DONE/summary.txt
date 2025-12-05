@@ -1,0 +1,785 @@
+Run directory initialized at /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS
+Starting HPO optimization...
+Trial 0 started.
+Loading separate training and testing files.
+No categorical input features found. Skipping One-Hot Encoding.
+Processing separate testing file to align columns and encoding...
+No categorical input features found. Skipping One-Hot Encoding.
+Separate testing file loaded and processed successfully. Shape: (1152, 6)
+Run directory initialized at /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS
+Starting HPO optimization...
+[best_cv_loss] inf
+[best_intermediate_r2] None
+[best_intermediate_nmae] None
+[best_intermediate_accuracy] None
+Starting new Optuna study for 200 trials.
+Trial 0 started.
+New best CV loss: 0.032082. Retraining candidate best model on full training data...
+New best CV loss: 0.032082. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 0 finished. Loss: 0.032082
+Trial 1 started.
+Full-data training for new best model completed (via train_final_model).
+[best_cv_loss] 0.03208222805540292
+[best_intermediate_r2] 0.9953631046228111
+[best_intermediate_nmae] 2.4129069718733254
+[best_intermediate_accuracy] 77.08333333333334
+New best model found.
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 0 finished. Loss: 0.032082
+Trial 0 finished. Loss: 0.032082
+Trial 1 started.
+New best CV loss: 0.008288. Retraining candidate best model on full training data...
+New best CV loss: 0.008288. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 1 finished. Loss: 0.008288
+Trial 2 started.
+[best_cv_loss] 0.008288025479608526
+[best_intermediate_r2] 0.9886474935337901
+[best_intermediate_nmae] 4.547821136401602
+[best_intermediate_accuracy] 56.68402777777778
+New best model found.
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 1 finished. Loss: 0.008288
+Trial 1 finished. Loss: 0.008288
+Trial 2 started.
+New best CV loss: 0.004324. Retraining candidate best model on full training data...
+New best CV loss: 0.004324. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 2 finished. Loss: 0.004324
+Trial 3 started.
+Full-data training for new best model completed (via train_final_model).
+[best_cv_loss] 0.004323854779747004
+[best_intermediate_r2] 0.9971955050714314
+[best_intermediate_nmae] 1.6061144212347032
+[best_intermediate_accuracy] 89.67013888888889
+New best model found.
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 2 finished. Loss: 0.004324
+Trial 2 finished. Loss: 0.004324
+Trial 3 started.
+Trial 3 finished. Loss: 0.008777
+Trial 4 started.
+Trial 3 finished. Loss: 0.008777
+Trial 3 finished. Loss: 0.008777
+Trial 4 started.
+Trial 4 finished. Loss: 0.005445
+Trial 5 started.
+Trial 6 started.
+Trial 4 finished. Loss: 0.005445
+Trial 4 finished. Loss: 0.005445
+Trial 5 started.
+Trial 5 pruned.
+Trial 6 started.
+Trial 7 started.
+Trial 8 started.
+Trial 9 started.
+Trial 10 started.
+Trial 11 started.
+Trial 12 started.
+Trial 13 started.
+Trial 6 pruned.
+Trial 7 started.
+Trial 7 pruned.
+Trial 8 started.
+Trial 8 pruned.
+Trial 9 started.
+Trial 9 pruned.
+Trial 10 started.
+Trial 10 pruned.
+Trial 11 started.
+Trial 11 pruned.
+Trial 12 started.
+Trial 12 pruned.
+Trial 13 started.
+Trial 14 started.
+Trial 13 pruned.
+Trial 14 started.
+Trial 15 started.
+Trial 16 started.
+Trial 17 started.
+Trial 18 started.
+Trial 19 started.
+Trial 14 pruned.
+Trial 15 started.
+Trial 15 pruned.
+Trial 16 started.
+Trial 16 pruned.
+Trial 17 started.
+Trial 17 pruned.
+Trial 18 started.
+Trial 18 pruned.
+Trial 19 started.
+Trial 19 finished. Loss: 0.012655
+Trial 20 started.
+Trial 19 finished. Loss: 0.012655
+Trial 19 finished. Loss: 0.012655
+Trial 20 started.
+Trial 21 started.
+Trial 20 pruned.
+Trial 21 started.
+Trial 21 finished. Loss: 0.007457
+Trial 22 started.
+Trial 23 started.
+Trial 24 started.
+Trial 25 started.
+Trial 26 started.
+Trial 21 finished. Loss: 0.007457
+Trial 21 finished. Loss: 0.007457
+Trial 22 started.
+Trial 22 pruned.
+Trial 23 started.
+Trial 23 pruned.
+Trial 24 started.
+Trial 24 pruned.
+Trial 25 started.
+Trial 25 pruned.
+Trial 26 started.
+Trial 26 finished. Loss: 0.017078
+Trial 27 started.
+Trial 28 started.
+Trial 29 started.
+Trial 30 started.
+Trial 31 started.
+Trial 32 started.
+Trial 33 started.
+Trial 34 started.
+Trial 26 finished. Loss: 0.017078
+Trial 26 finished. Loss: 0.017078
+Trial 27 started.
+Trial 27 pruned.
+Trial 28 started.
+Trial 28 pruned.
+Trial 29 started.
+Trial 29 pruned.
+Trial 30 started.
+Trial 30 pruned.
+Trial 31 started.
+Trial 31 pruned.
+Trial 32 started.
+Trial 32 pruned.
+Trial 33 started.
+Trial 33 pruned.
+Trial 34 started.
+Trial 35 started.
+Trial 36 started.
+Trial 37 started.
+Trial 38 started.
+Trial 34 pruned.
+Trial 35 started.
+Trial 35 pruned.
+Trial 36 started.
+Trial 36 pruned.
+Trial 37 started.
+Trial 37 pruned.
+Trial 38 started.
+Trial 39 started.
+Trial 38 pruned.
+Trial 39 started.
+Trial 40 started.
+Trial 39 pruned.
+Trial 40 started.
+Trial 40 finished. Loss: 0.010696
+Trial 41 started.
+Trial 40 finished. Loss: 0.010696
+Trial 40 finished. Loss: 0.010696
+Trial 41 started.
+Trial 41 finished. Loss: 0.015636
+Trial 42 started.
+Trial 43 started.
+Trial 41 finished. Loss: 0.015636
+Trial 41 finished. Loss: 0.015636
+Trial 42 started.
+Trial 42 pruned.
+Trial 43 started.
+Trial 44 started.
+Trial 45 started.
+Trial 46 started.
+Trial 43 pruned.
+Trial 44 started.
+Trial 44 pruned.
+Trial 45 started.
+Trial 45 pruned.
+Trial 46 started.
+Trial 47 started.
+Trial 48 started.
+Trial 46 pruned.
+Trial 47 started.
+Trial 47 pruned.
+Trial 48 started.
+New best CV loss: 0.002874. Retraining candidate best model on full training data...
+New best CV loss: 0.002874. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 48 finished. Loss: 0.002874
+Trial 49 started.
+Trial 50 started.
+Full-data training for new best model completed (via train_final_model).
+[best_cv_loss] 0.0028736237310416374
+[best_intermediate_r2] 0.9956656815484166
+[best_intermediate_nmae] 2.982274380310615
+[best_intermediate_accuracy] 76.99652777777779
+New best model found.
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 48 finished. Loss: 0.002874
+Trial 48 finished. Loss: 0.002874
+Trial 49 started.
+Trial 49 pruned.
+Trial 50 started.
+Trial 50 finished. Loss: 0.003268
+Trial 51 started.
+Trial 52 started.
+Trial 53 started.
+Trial 50 finished. Loss: 0.003268
+Trial 50 finished. Loss: 0.003268
+Trial 51 started.
+Trial 51 pruned.
+Trial 52 started.
+Trial 52 pruned.
+Trial 53 started.
+Trial 53 finished. Loss: 0.003026
+Trial 54 started.
+Trial 53 finished. Loss: 0.003026
+Trial 53 finished. Loss: 0.003026
+Trial 54 started.
+Trial 54 finished. Loss: 0.004168
+Trial 55 started.
+Trial 56 started.
+Trial 57 started.
+Trial 58 started.
+Trial 54 finished. Loss: 0.004168
+Trial 54 finished. Loss: 0.004168
+Trial 55 started.
+Trial 55 pruned.
+Trial 56 started.
+Trial 56 pruned.
+Trial 57 started.
+Trial 57 pruned.
+Trial 58 started.
+Trial 58 finished. Loss: 0.003856
+Trial 59 started.
+Trial 60 started.
+Trial 61 started.
+Trial 62 started.
+Trial 63 started.
+Trial 64 started.
+Trial 65 started.
+Trial 66 started.
+Trial 67 started.
+Trial 68 started.
+Trial 58 finished. Loss: 0.003856
+Trial 58 finished. Loss: 0.003856
+Trial 59 started.
+Trial 59 pruned.
+Trial 60 started.
+Trial 60 pruned.
+Trial 61 started.
+Trial 61 pruned.
+Trial 62 started.
+Trial 62 pruned.
+Trial 63 started.
+Trial 63 pruned.
+Trial 64 started.
+Trial 64 pruned.
+Trial 65 started.
+Trial 65 pruned.
+Trial 66 started.
+Trial 66 pruned.
+Trial 67 started.
+Trial 67 pruned.
+Trial 68 started.
+Trial 68 finished. Loss: 0.007477
+Trial 69 started.
+Trial 70 started.
+Trial 68 finished. Loss: 0.007477
+Trial 68 finished. Loss: 0.007477
+Trial 69 started.
+Trial 69 pruned.
+Trial 70 started.
+Trial 70 finished. Loss: 0.003551
+Trial 71 started.
+Trial 70 finished. Loss: 0.003551
+Trial 70 finished. Loss: 0.003551
+Trial 71 started.
+Trial 71 finished. Loss: 0.004367
+Trial 72 started.
+Trial 73 started.
+Trial 71 finished. Loss: 0.004367
+Trial 71 finished. Loss: 0.004367
+Trial 72 started.
+Trial 72 pruned.
+Trial 73 started.
+Trial 74 started.
+Trial 75 started.
+Trial 76 started.
+Trial 77 started.
+Trial 78 started.
+Trial 73 pruned.
+Trial 74 started.
+Trial 74 pruned.
+Trial 75 started.
+Trial 75 pruned.
+Trial 76 started.
+Trial 76 pruned.
+Trial 77 started.
+Trial 77 pruned.
+Trial 78 started.
+Trial 78 finished. Loss: 0.005035
+Trial 79 started.
+Trial 80 started.
+Trial 78 finished. Loss: 0.005035
+Trial 78 finished. Loss: 0.005035
+Trial 79 started.
+Trial 79 pruned.
+Trial 80 started.
+Trial 80 finished. Loss: 0.006229
+Trial 81 started.
+Trial 82 started.
+Trial 83 started.
+Trial 84 started.
+Trial 85 started.
+Trial 86 started.
+Trial 87 started.
+Trial 80 finished. Loss: 0.006229
+Trial 80 finished. Loss: 0.006229
+Trial 81 started.
+Trial 81 pruned.
+Trial 82 started.
+Trial 82 pruned.
+Trial 83 started.
+Trial 83 pruned.
+Trial 84 started.
+Trial 84 pruned.
+Trial 85 started.
+Trial 85 pruned.
+Trial 86 started.
+Trial 86 pruned.
+Trial 87 started.
+Trial 87 finished. Loss: 0.003210
+Trial 88 started.
+Trial 89 started.
+Trial 90 started.
+Trial 87 finished. Loss: 0.003210
+Trial 87 finished. Loss: 0.003210
+Trial 88 started.
+Trial 88 pruned.
+Trial 89 started.
+Trial 89 pruned.
+Trial 90 started.
+Trial 90 finished. Loss: 0.003925
+Trial 91 started.
+Trial 90 finished. Loss: 0.003925
+Trial 90 finished. Loss: 0.003925
+Trial 91 started.
+Trial 91 finished. Loss: 0.004250
+Trial 92 started.
+Trial 91 finished. Loss: 0.004250
+Trial 91 finished. Loss: 0.004250
+Trial 92 started.
+Trial 92 finished. Loss: 0.007566
+Trial 93 started.
+Trial 94 started.
+Trial 95 started.
+Trial 92 finished. Loss: 0.007566
+Trial 92 finished. Loss: 0.007566
+Trial 93 started.
+Trial 93 pruned.
+Trial 94 started.
+Trial 94 pruned.
+Trial 95 started.
+Trial 95 finished. Loss: 0.005594
+Trial 96 started.
+Trial 97 started.
+Trial 98 started.
+Trial 95 finished. Loss: 0.005594
+Trial 95 finished. Loss: 0.005594
+Trial 96 started.
+Trial 96 pruned.
+Trial 97 started.
+Trial 97 pruned.
+Trial 98 started.
+Trial 98 finished. Loss: 0.004667
+Trial 99 started.
+Trial 100 started.
+Trial 101 started.
+Trial 98 finished. Loss: 0.004667
+Trial 98 finished. Loss: 0.004667
+Trial 99 started.
+Trial 99 pruned.
+Trial 100 started.
+Trial 100 pruned.
+Trial 101 started.
+Trial 101 finished. Loss: 0.005052
+Trial 102 started.
+Trial 103 started.
+Trial 104 started.
+Trial 105 started.
+Trial 101 finished. Loss: 0.005052
+Trial 101 finished. Loss: 0.005052
+Trial 102 started.
+Trial 102 pruned.
+Trial 103 started.
+Trial 103 pruned.
+Trial 104 started.
+Trial 104 pruned.
+Trial 105 started.
+Trial 106 started.
+Trial 107 started.
+Trial 108 started.
+Trial 109 started.
+Trial 110 started.
+Trial 111 started.
+Trial 112 started.
+Trial 113 started.
+Trial 114 started.
+Trial 105 pruned.
+Trial 106 started.
+Trial 106 pruned.
+Trial 107 started.
+Trial 107 pruned.
+Trial 108 started.
+Trial 108 pruned.
+Trial 109 started.
+Trial 109 pruned.
+Trial 110 started.
+Trial 110 pruned.
+Trial 111 started.
+Trial 111 pruned.
+Trial 112 started.
+Trial 112 pruned.
+Trial 113 started.
+Trial 113 pruned.
+Trial 114 started.
+Trial 115 started.
+Trial 116 started.
+Trial 117 started.
+Trial 118 started.
+Trial 119 started.
+Trial 120 started.
+Trial 121 started.
+Trial 114 pruned.
+Trial 115 started.
+Trial 115 pruned.
+Trial 116 started.
+Trial 116 pruned.
+Trial 117 started.
+Trial 117 pruned.
+Trial 118 started.
+Trial 118 pruned.
+Trial 119 started.
+Trial 119 pruned.
+Trial 120 started.
+Trial 120 pruned.
+Trial 121 started.
+Trial 122 started.
+Trial 123 started.
+Trial 124 started.
+Trial 125 started.
+Trial 126 started.
+Trial 127 started.
+Trial 128 started.
+Trial 129 started.
+Trial 130 started.
+Trial 131 started.
+Trial 132 started.
+Trial 121 pruned.
+Trial 122 started.
+Trial 122 pruned.
+Trial 123 started.
+Trial 123 pruned.
+Trial 124 started.
+Trial 124 pruned.
+Trial 125 started.
+Trial 125 pruned.
+Trial 126 started.
+Trial 126 pruned.
+Trial 127 started.
+Trial 127 pruned.
+Trial 128 started.
+Trial 128 pruned.
+Trial 129 started.
+Trial 129 pruned.
+Trial 130 started.
+Trial 130 pruned.
+Trial 131 started.
+Trial 131 pruned.
+Trial 132 started.
+Trial 133 started.
+Trial 134 started.
+Trial 135 started.
+Trial 136 started.
+Trial 132 pruned.
+Trial 133 started.
+Trial 133 pruned.
+Trial 134 started.
+Trial 134 pruned.
+Trial 135 started.
+Trial 135 pruned.
+Trial 136 started.
+Trial 136 finished. Loss: 0.011104
+Trial 137 started.
+Trial 136 finished. Loss: 0.011104
+Trial 136 finished. Loss: 0.011104
+Trial 137 started.
+Trial 138 started.
+Trial 139 started.
+Trial 140 started.
+Trial 137 pruned.
+Trial 138 started.
+Trial 138 pruned.
+Trial 139 started.
+Trial 139 pruned.
+Trial 140 started.
+Trial 140 finished. Loss: 0.011262
+Trial 141 started.
+Trial 142 started.
+Trial 143 started.
+Trial 144 started.
+Trial 145 started.
+Trial 146 started.
+Trial 140 finished. Loss: 0.011262
+Trial 140 finished. Loss: 0.011262
+Trial 141 started.
+Trial 141 pruned.
+Trial 142 started.
+Trial 142 pruned.
+Trial 143 started.
+Trial 143 pruned.
+Trial 144 started.
+Trial 144 pruned.
+Trial 145 started.
+Trial 145 pruned.
+Trial 146 started.
+Trial 147 started.
+Trial 148 started.
+Trial 149 started.
+Trial 150 started.
+Trial 151 started.
+Trial 146 pruned.
+Trial 147 started.
+Trial 147 pruned.
+Trial 148 started.
+Trial 148 pruned.
+Trial 149 started.
+Trial 149 pruned.
+Trial 150 started.
+Trial 150 pruned.
+Trial 151 started.
+Trial 151 finished. Loss: 0.008350
+Trial 152 started.
+Trial 153 started.
+Trial 154 started.
+Trial 151 finished. Loss: 0.008350
+Trial 151 finished. Loss: 0.008350
+Trial 152 started.
+Trial 152 pruned.
+Trial 153 started.
+Trial 153 pruned.
+Trial 154 started.
+Trial 154 finished. Loss: 0.003627
+Trial 155 started.
+Trial 154 finished. Loss: 0.003627
+Trial 154 finished. Loss: 0.003627
+Trial 155 started.
+Trial 156 started.
+Trial 157 started.
+Trial 158 started.
+Trial 155 pruned.
+Trial 156 started.
+Trial 156 pruned.
+Trial 157 started.
+Trial 157 pruned.
+Trial 158 started.
+Trial 158 finished. Loss: 0.004724
+Trial 159 started.
+Trial 160 started.
+Trial 161 started.
+Trial 158 finished. Loss: 0.004724
+Trial 158 finished. Loss: 0.004724
+Trial 159 started.
+Trial 159 pruned.
+Trial 160 started.
+Trial 160 pruned.
+Trial 161 started.
+Trial 161 finished. Loss: 0.005762
+Trial 162 started.
+Trial 163 started.
+Trial 161 finished. Loss: 0.005762
+Trial 161 finished. Loss: 0.005762
+Trial 162 started.
+Trial 162 pruned.
+Trial 163 started.
+Trial 164 started.
+Trial 165 started.
+Trial 163 pruned.
+Trial 164 started.
+Trial 164 pruned.
+Trial 165 started.
+Trial 165 finished. Loss: 0.009377
+Trial 166 started.
+Trial 167 started.
+Trial 168 started.
+Trial 165 finished. Loss: 0.009377
+Trial 165 finished. Loss: 0.009377
+Trial 166 started.
+Trial 166 pruned.
+Trial 167 started.
+Trial 167 pruned.
+Trial 168 started.
+Trial 169 started.
+Trial 170 started.
+Trial 168 pruned.
+Trial 169 started.
+Trial 169 pruned.
+Trial 170 started.
+New best CV loss: 0.002394. Retraining candidate best model on full training data...
+New best CV loss: 0.002394. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 170 finished. Loss: 0.002394
+Trial 171 started.
+Trial 172 started.
+Full-data training for new best model completed (via train_final_model).
+[best_cv_loss] 0.0023936663799263027
+[best_intermediate_r2] 0.9969309119042009
+[best_intermediate_nmae] 2.0536583046867136
+[best_intermediate_accuracy] 86.63194444444444
+New best model found.
+Run artifacts zipped for download: train_engine_model_12x_test_engine_model_12x__de3de569f2__IN_PROGRESS.zip
+Trial 170 finished. Loss: 0.002394
+Trial 170 finished. Loss: 0.002394
+Trial 171 started.
+Trial 171 pruned.
+Trial 172 started.
+Trial 173 started.
+Trial 172 pruned.
+Trial 173 started.
+Trial 173 finished. Loss: 0.004211
+Trial 174 started.
+Trial 173 finished. Loss: 0.004211
+Trial 173 finished. Loss: 0.004211
+Trial 174 started.
+Trial 174 finished. Loss: 0.003982
+Trial 175 started.
+Trial 176 started.
+Trial 177 started.
+Trial 174 finished. Loss: 0.003982
+Trial 174 finished. Loss: 0.003982
+Trial 175 started.
+Trial 175 pruned.
+Trial 176 started.
+Trial 176 pruned.
+Trial 177 started.
+Trial 178 started.
+Trial 177 pruned.
+Trial 178 started.
+Trial 178 finished. Loss: 0.005352
+Trial 179 started.
+Trial 180 started.
+Trial 178 finished. Loss: 0.005352
+Trial 178 finished. Loss: 0.005352
+Trial 179 started.
+Trial 179 pruned.
+Trial 180 started.
+Trial 180 finished. Loss: 0.006974
+Trial 181 started.
+Trial 182 started.
+Trial 183 started.
+Trial 184 started.
+Trial 185 started.
+Trial 186 started.
+Trial 180 finished. Loss: 0.006974
+Trial 180 finished. Loss: 0.006974
+Trial 181 started.
+Trial 181 pruned.
+Trial 182 started.
+Trial 182 pruned.
+Trial 183 started.
+Trial 183 pruned.
+Trial 184 started.
+Trial 184 pruned.
+Trial 185 started.
+Trial 185 pruned.
+Trial 186 started.
+Trial 187 started.
+Trial 188 started.
+Trial 189 started.
+Trial 190 started.
+Trial 191 started.
+Trial 192 started.
+Trial 193 started.
+Trial 194 started.
+Trial 195 started.
+Trial 196 started.
+Trial 186 pruned.
+Trial 187 started.
+Trial 187 pruned.
+Trial 188 started.
+Trial 188 pruned.
+Trial 189 started.
+Trial 189 pruned.
+Trial 190 started.
+Trial 190 pruned.
+Trial 191 started.
+Trial 191 pruned.
+Trial 192 started.
+Trial 192 pruned.
+Trial 193 started.
+Trial 193 pruned.
+Trial 194 started.
+Trial 194 pruned.
+Trial 195 started.
+Trial 195 pruned.
+Trial 196 started.
+Trial 197 started.
+Trial 198 started.
+Trial 199 started.
+Trial 196 pruned.
+Trial 197 started.
+Trial 197 pruned.
+Trial 198 started.
+Trial 198 pruned.
+Trial 199 started.
+Trial 199 finished. Loss: 0.006061
+Optimization complete. Optuna study object saved for visualization.
+Using best intermediate model for final outputs (renamed to final).
+
+Dataset: train_engine_model_12x_test_engine_model_12x
+Config Hash: de3de569f2
+Status: DONE
+Started: 2025-12-05T10:41:22.206541
+Finished: 2025-12-05T11:31:07.627673
+Best CV Loss: 0.0023936663799263027
+Test Metrics (best model on unseen data):
+  NMAE: 2.0536583046867136
+  R2: 0.9969309119042009
+  Accuracy: 86.63194444444444Final metrics on unseen data: r2score: 0.9969309119042009, NMA: 2.0536583046867136, accuracy: 86.63194444444444
+Trial 199 finished. Loss: 0.006061
+Trial 199 finished. Loss: 0.006061
+Optimization finished.
+Optimization complete. Optuna study object saved for visualization.
+Using best intermediate model for final outputs (renamed to final).
+Final test metrics — NMAE: 2.0536583046867136, R2: 0.9969309119042009, Accuracy: 86.63194444444444
+Run artifacts zipped (DONE): train_engine_model_12x_test_engine_model_12x__de3de569f2__DONE.zip
+--- Training thread finished ---
+Features selected via '*': EVC_p_Offset, relSpeed, load, EWG_p_Offset, T_amb.
+No categorical input features found. Skipping One-Hot Encoding.

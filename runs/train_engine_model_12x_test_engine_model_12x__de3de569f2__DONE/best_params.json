@@ -1,0 +1,1 @@
+{"hidden_layers": 2, "hidden_neurons_1": 81, "act_func_1": "ReLU", "hidden_neurons_2": 16, "act_func_2": "ReLU", "learning_rate": 0.026143565223228905, "batch_size": 88, "epochs": 166, "optimizer_name": "Adam"}

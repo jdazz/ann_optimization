@@ -681,24 +681,3 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
     print("Final model retraining complete.")
     return model
 
-
-def find_best_model(dataset):
-    """
-    NOTE: This function appears to be unused by your core pipeline. 
-    It is kept here but would be executed by the main thread.
-    """
-    # Load config internally
-    config_path = os.path.join(os.getcwd(), "config.yaml")
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    
-    # Run Hyperparameter Optimization
-    # This call is likely incorrect for a main thread execution and should be removed 
-    # if it's not being used for the pipeline.
-    # The actual pipeline execution happens in run_training_pipeline.
-    
-    # ... (This logic should be handled by run_training_pipeline) ...
-
-    # MODIFIED RETURN SIGNATURE (based on your intent)
-    # return final_model, best_params, study 
-    pass

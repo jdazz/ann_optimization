@@ -117,6 +117,18 @@ def handle_run_pipeline(is_resume: bool):
     st.session_state.dataset_name = run_label
     st.session_state.config_hash = make_config_hash(st.session_state.config)
 
+    # If resuming after a stop, rename any ABORTED zip back to IN_PROGRESS
+    if is_resume:
+        base_runs = os.path.join(os.getcwd(), "runs")
+        run_prefix = f"{run_label}__{st.session_state.config_hash}"
+        aborted_zip = os.path.join(base_runs, f"{run_prefix}__ABORTED.zip")
+        in_progress_zip = os.path.join(base_runs, f"{run_prefix}__IN_PROGRESS.zip")
+        if os.path.exists(aborted_zip):
+            try:
+                os.replace(aborted_zip, in_progress_zip)
+            except Exception:
+                pass
+
     # 4. Standardization
     should_standardize = (
         st.session_state.config.get("cross_validation", {}).get("standardize_features", False)
@@ -318,6 +330,12 @@ def render_live_status(col, best_model_exists):
         # ---------------------------------------------------------------------
         if ss.get("is_running", False):
             st.info("Training is in progress...")
+            run_dir = ss.get("current_run_dir")
+            if run_dir:
+                base_name = os.path.basename(run_dir)
+                if base_name.endswith("__IN_PROGRESS"):
+                    base_name = base_name.rsplit("__", 1)[0]
+                st.write(f'Current run: "{base_name}"')
         elif ss.get("is_resumable", False):
             st.warning("Training Paused. Resume or Start New.")
         elif ss.get("final_model_path"):
