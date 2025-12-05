@@ -53,7 +53,10 @@ def process_queue_updates() -> bool:
             ss.log_messages.append(value)
             # Mirror live log into summary.txt of current run, if known
             run_dir = ss.get("current_run_dir")
-            append_run_log(run_dir, str(value))
+            # Avoid double-write if worker already logged directly
+            already_logged = bool(update.get("logged", False))
+            if not already_logged:
+                append_run_log(run_dir, str(value))
 
         elif key == "is_running":
             ss.is_running = bool(value)
@@ -94,6 +97,14 @@ def process_queue_updates() -> bool:
             ss[key] = value
             run_dir = ss.get("current_run_dir")
             append_run_log(run_dir, f"[{key}] {value}")
+
+        elif key == "current_trial_number":
+            try:
+                ss.current_trial_number = int(value)
+            except Exception:
+                ss.current_trial_number = value
+            run_dir = ss.get("current_run_dir")
+            write_value_file(run_dir, "current_trial_number.txt", ss.current_trial_number)
 
         # Add other explicit keys here if you like, e.g. best_loss_so_far, etc.
         # elif key == "best_loss_so_far":

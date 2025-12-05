@@ -298,6 +298,15 @@ def zip_run_dir(run_dir: str) -> Optional[str]:
     """Create a zip archive of the given run directory. Returns zip path."""
     if not run_dir or not os.path.isdir(run_dir):
         return None
+
+    # Remove transient progress file before archiving
+    progress_file = os.path.join(run_dir, "current_trial_number.txt")
+    if os.path.exists(progress_file):
+        try:
+            os.remove(progress_file)
+        except Exception:
+            pass
+
     base_name = run_dir.rstrip(os.sep)
     zip_path = f"{base_name}.zip"
     # Remove existing archive to avoid stale contents

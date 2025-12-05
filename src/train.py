@@ -21,7 +21,7 @@ from src.model import define_net_regression
 from utils.save_onnx import export_to_onnx
 from src.model_test import test as test_model
 from utils.save_scaler import save_scaler_to_json
-from utils.run_manager import append_run_log, update_best_metrics, zip_run_dir
+from utils.run_manager import append_run_log, update_best_metrics, zip_run_dir, write_value_file
 
 
 Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -97,8 +97,8 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
     # This keeps summary.txt updated even if the Streamlit page reloads and
     # misses queue processing events.
     def log_and_record(message: str):
-        send_update(update_queue, "log_messages", message)
         append_run_log(run_dir, str(message))
+        update_queue.put({"key": "log_messages", "value": message, "logged": True})
 
     print(f"\nTrial {trial.number}: ", end="")
     log_and_record(f"Trial {trial.number} started.")
@@ -501,7 +501,6 @@ def crossvalidation(trial, model_builder, dataset, config, update_queue: queue.Q
         #     ... (log that R² did not improve)
 
     # This is the value Optuna will minimize
-    log_and_record(f"Trial {trial.number} finished. Loss: {avg_loss:.6f}")
     return avg_loss
 
 def optimization(
@@ -587,7 +586,9 @@ def optimization(
     def optuna_callback(study: optuna.Study, trial: optuna.Trial):
         
         # 1. Update trial progress: USE QUEUE (use len(study.trials) for accurate count)
-        send_update(update_queue, 'current_trial_number', len(study.trials))
+        current_trials = len(study.trials)
+        send_update(update_queue, 'current_trial_number', current_trials)
+        write_value_file(run_dir, "current_trial_number.txt", current_trials)
         
         # 2. Check for stop signal (between trials)
         if stop_event.is_set():
@@ -614,7 +615,12 @@ def optimization(
         dataset_test,
         run_dir,
     )
-    
+
+    # Persist initial trial count (handles resume or fresh start)
+    initial_trials = len(study.trials)
+    send_update(update_queue, 'current_trial_number', initial_trials)
+    write_value_file(run_dir, "current_trial_number.txt", initial_trials)
+
     try:
         study.optimize(
             objective, 
@@ -680,4 +686,3 @@ def train_final_model(model, data_train, best_params, n_input_params, n_output_p
         
     print("Final model retraining complete.")
     return model
-

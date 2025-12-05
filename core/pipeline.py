@@ -6,11 +6,14 @@ import torch
 import threading
 import traceback
 import queue
+import pandas as pd
+import optuna.visualization as ov
 
 from datetime import datetime
 
 from src.train import optimization, train_final_model
 from src.model import define_net_regression
+from src.plot import make_plotly_figure
 from utils.save_onnx import export_to_onnx
 from utils.run_manager import (
     derive_dataset_name,
@@ -58,11 +61,48 @@ def run_training_pipeline(
 
     def send_update(key, value):
         """Helper to push updates to the main Streamlit thread."""
-        update_queue.put({"key": key, "value": value})
+        payload = {"key": key, "value": value}
         # Mirror critical logs directly to disk so summary.txt keeps growing even
         # if the UI session is reloaded and misses queue processing.
         if key == "log_messages":
             append_run_log(run_dir, str(value))
+            payload["logged"] = True
+        update_queue.put(payload)
+
+    def generate_plots(target_dir: str, study_obj):
+        """Create parity and Optuna plots under target_dir/plots."""
+        plots_dir = os.path.join(target_dir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+
+        # Parity plot from saved predictions
+        preds_path = os.path.join(target_dir, "best_predictions.csv")
+        if os.path.exists(preds_path):
+            try:
+                df = pd.read_csv(preds_path)
+                y_true_cols = [c for c in df.columns if c.startswith("y_true_")]
+                y_pred_cols = [c for c in df.columns if c.startswith("y_pred_")]
+                if y_true_cols and y_pred_cols:
+                    y_true = df[y_true_cols].values.flatten()
+                    y_pred = df[y_pred_cols].values.flatten()
+                    fig = make_plotly_figure(y_pred, y_true)
+                    fig.write_image(os.path.join(plots_dir, "parity_plot.pdf"))
+                    send_update("log_messages", "Saved parity plot (worker).")
+            except Exception as e:
+                append_run_log(target_dir, f"[plot_error] Parity plot failed: {e}")
+
+        # Optuna plots if study available
+        if study_obj is not None:
+            try:
+                fig_hist = ov.plot_optimization_history(study_obj)
+                fig_hist.write_image(os.path.join(plots_dir, "optuna_optimization_history.pdf"))
+            except Exception as e:
+                append_run_log(target_dir, f"[plot_error] Optuna history plot failed: {e}")
+
+            try:
+                fig_imp = ov.plot_param_importances(study_obj)
+                fig_imp.write_image(os.path.join(plots_dir, "optuna_param_importance.pdf"))
+            except Exception as e:
+                append_run_log(target_dir, f"[plot_error] Optuna importance plot failed: {e}")
 
     def abort_run():
         """Handle abort: rename folder to ABORTED and send state updates."""
@@ -253,6 +293,9 @@ def run_training_pipeline(
                 # This append is intentionally LAST, so this line is at the bottom.
                 append_run_log(final_dir, final_line)
 
+            # Save plots before zipping
+            generate_plots(final_dir, study)
+
             # Zip final DONE folder for download resiliency after reloads
             final_zip = zip_run_dir(final_dir)
             if final_zip:
@@ -376,6 +419,9 @@ def run_training_pipeline(
             )
             # Again, this append is LAST so it becomes the final line.
             append_run_log(final_dir, final_line)
+
+        # Save plots before zipping
+        generate_plots(final_dir, study)
 
         # Zip final DONE folder for download resiliency after reloads
         final_zip = zip_run_dir(final_dir)

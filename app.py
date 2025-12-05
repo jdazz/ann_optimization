@@ -1,5 +1,3 @@
-# app.py - ANN Optimization Dashboard (Filesystem-driven reloads)
-
 import os
 import time
 import json
@@ -138,6 +136,7 @@ def hydrate_from_disk():
     st.session_state.best_intermediate_r2 = None
     st.session_state.best_intermediate_nmae = None
     st.session_state.best_intermediate_accuracy = None
+    st.session_state.current_trial_number = 0
 
     if isinstance(metrics_file, dict):
         st.session_state.best_loss_so_far = metrics_file.get(
@@ -152,6 +151,14 @@ def hydrate_from_disk():
             "R2": metrics_file.get("R2"),
             "Accuracy": metrics_file.get("Accuracy"),
         }
+
+    # Hydrate trial progress from disk if available
+    trial_from_disk = read_value_file(path, "current_trial_number.txt")
+    try:
+        if trial_from_disk is not None:
+            st.session_state.current_trial_number = int(trial_from_disk)
+    except Exception:
+        pass
     else:
         metrics_file = None
     best_metrics = metrics_file
@@ -395,39 +402,137 @@ render_control_panel()
 # ----------------------------------------------------------------------------------
 render_final_results()
 
-# Completed run archives display
-archives = list_run_archives()
-if archives:
-    st.subheader("Completed Runs (ZIP)")
-    for name, path in archives:
-        row_cols = st.columns([6, 1])
-        with row_cols[0]:
-            try:
-                with open(path, "rb") as f:
-                    data = f.read()
-                st.download_button(
-                    label=f"Download {name}",
-                    data=data,
-                    file_name=name,
-                    mime="application/zip",
-                    key=f"dl_{name}",
-                )
-            except Exception:
-                st.write(f"{name} (unreadable)")
-        with row_cols[1]:
-            if st.button("✕", key=f"del_{name}", help="Delete this archive"):
+# Completed runs explorer
+def list_completed_runs(base_dir="runs"):
+    runs = []
+    if not os.path.isdir(base_dir):
+        return runs
+    for name in os.listdir(base_dir):
+        if name.endswith("__DONE"):
+            run_path = os.path.join(base_dir, name)
+            if os.path.isdir(run_path):
+                zip_path = f"{run_path}.zip"
+                zip_exists = zip_path if os.path.exists(zip_path) else None
+                display_name = name.rsplit("__", 1)[0]
+                runs.append((display_name, run_path, zip_exists))
+    return sorted(runs, key=lambda x: x[0], reverse=True)
+
+def list_previous_runs(base_dir="runs"):
+    """
+    Return list of (display_name, status, run_path or None, zip_path or None)
+    Includes DONE/ABORTED/FAILED folders and orphaned zip archives.
+    """
+    runs_map = {}
+    if not os.path.isdir(base_dir):
+        return []
+
+    # First pass: folders
+    for name in os.listdir(base_dir):
+        if "__" in name:
+            status = name.rsplit("__", 1)[-1]
+            if status in ("DONE", "ABORTED", "FAILED"):
+                run_path = os.path.join(base_dir, name)
+                if os.path.isdir(run_path):
+                    zip_path = f"{run_path}.zip"
+                    zip_exists = zip_path if os.path.exists(zip_path) else None
+                    display_name = name.rsplit("__", 1)[0]
+                    runs_map[(display_name, status)] = (display_name, status, run_path, zip_exists)
+
+    # Second pass: orphaned zip archives
+    for name in os.listdir(base_dir):
+        if name.endswith(".zip") and "__" in name:
+            base = name[:-4]  # strip .zip
+            status = base.rsplit("__", 1)[-1]
+            if status in ("DONE", "ABORTED", "FAILED"):
+                display_name = base.rsplit("__", 1)[0]
+                key = (display_name, status)
+                if key not in runs_map:
+                    runs_map[key] = (display_name, status, None, os.path.join(base_dir, name))
+
+    runs = list(runs_map.values())
+    return sorted(runs, key=lambda x: x[0], reverse=True)
+
+previous_runs = list_previous_runs()
+if previous_runs:
+    #st.subheader("Previous Runs")
+    with st.expander("View previous runs", expanded=True):
+        # Per-run delete controls
+        for display_name, status, run_path, zip_path in previous_runs:
+            cols = st.columns([6, 1])
+            cols[0].write(f"{display_name} ({status})")
+            if cols[1].button("✕", key=f"del_run_{display_name}_{status}", help="Delete run and archive"):
                 try:
-                    os.remove(path)
+                    if zip_path and os.path.exists(zip_path):
+                        os.remove(zip_path)
                 except Exception:
                     pass
-                # Also delete any folder with the same base name (without .zip)
-                base_name = os.path.splitext(path)[0]
                 try:
-                    if os.path.isdir(base_name):
-                        shutil.rmtree(base_name, ignore_errors=True)
+                    if os.path.isdir(run_path):
+                        shutil.rmtree(run_path, ignore_errors=True)
                 except Exception:
                     pass
                 st.rerun()
+
+        names = ["--"] + [f"{r[0]} ({r[1]})" for r in previous_runs]
+        selection = st.selectbox("Select a run to inspect", names, key="completed_run_select")
+        if selection == "(Hide previous runs)":
+            selected = None
+        else:
+            selected = next((r for r in previous_runs if f"{r[0]} ({r[1]})" == selection), None)
+
+        if selected:
+            _, _, run_path, zip_path = selected
+            metrics = read_value_file(run_path, "best_metrics.json") if run_path and os.path.isdir(run_path) else {}
+
+            # Metrics display
+            st.title("Performance on unseen data")
+            mcol1, mcol2, mcol3 = st.columns(3)
+            mcol1.metric("NMAE", f"{metrics.get('NMAE', '—')}")
+            mcol2.metric("R²", f"{metrics.get('R2', '—')}")
+            mcol3.metric("Accuracy", f"{metrics.get('Accuracy', '—')}")
+
+            # Parity plot (recompute from saved predictions)
+            preds_path = os.path.join(run_path, "best_predictions.csv") if run_path else None
+            if preds_path and os.path.exists(preds_path):
+                try:
+                    df_preds = pd.read_csv(preds_path)
+                    y_true_cols = [c for c in df_preds.columns if c.startswith("y_true_")]
+                    y_pred_cols = [c for c in df_preds.columns if c.startswith("y_pred_")]
+                    if y_true_cols and y_pred_cols:
+                        y_true = df_preds[y_true_cols].values.flatten()
+                        y_pred = df_preds[y_pred_cols].values.flatten()
+                        fig = make_plotly_figure(y_pred, y_true)
+                        st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.info(f"Could not render parity plot: {e}")
+
+            # Predictions CSV download (if present)
+            if preds_path and os.path.exists(preds_path):
+                try:
+                    with open(preds_path, "rb") as f:
+                        st.download_button(
+                            label="Download predictions (CSV)",
+                            data=f.read(),
+                            file_name="best_predictions.csv",
+                            mime="text/csv",
+                            key=f"dl_preds_{selection}",
+                        )
+                except Exception:
+                    st.info("Predictions file unreadable.")
+
+            # Zip download
+            if zip_path and os.path.exists(zip_path):
+                try:
+                    with open(zip_path, "rb") as f:
+                        st.download_button(
+                            label="Download run archive (zip)",
+                            data=f.read(),
+                            file_name=os.path.basename(zip_path),
+                            mime="application/zip",
+                            key=f"dl_zip_{selection}",
+                        )
+                except Exception:
+                    st.info("Zip archive unreadable.")
 else:
     st.info("No completed run archives found yet.")
 

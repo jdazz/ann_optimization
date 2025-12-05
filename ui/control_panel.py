@@ -288,6 +288,22 @@ def render_control_panel():
         best_model_exists = os.path.exists(st.session_state.best_model_path)
         if is_running or best_model_exists or is_resumable:
             render_live_status(col1, best_model_exists)
+        # In-progress zip download
+        if is_running:
+            run_dir = st.session_state.get("current_run_dir")
+            if run_dir:
+                zip_path = f"{run_dir}.zip"
+                if os.path.exists(zip_path):
+                    try:
+                        with open(zip_path, "rb") as f_zip:
+                            st.download_button(
+                                label="Download current run archive (zip)",
+                                data=f_zip.read(),
+                                file_name=os.path.basename(zip_path),
+                                mime="application/zip",
+                            )
+                    except Exception:
+                        st.info("Current run archive unavailable.")
 
     with col2:
         # Show logs whenever we have a run directory, even after reloads.
@@ -433,7 +449,13 @@ def render_live_status(col, best_model_exists):
         m_col1, m_col2, m_col3 = st.columns(3)
 
         # Before first trial completes, we want to show "--"
-        first_trial_not_done = (current == 0)
+        # Treat trial as started if we already have persisted metrics
+        first_trial_not_done = (
+            current == 0
+            and best_loss in (None, float("inf"))
+            and best_r2 is None
+            and best_nmae is None
+        )
 
         # ----------------- Best CV Loss -----------------
         with m_col1:
