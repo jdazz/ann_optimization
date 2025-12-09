@@ -15,6 +15,7 @@ from src.model_test import test
 from src.plot import make_plotly_figure
 from utils.save_scaler import save_scaler_to_json
 from utils.run_manager import zip_run_dir
+from utils.plot_utils import save_plot_with_fallback
 from pathlib import Path
 
 
@@ -214,9 +215,11 @@ def render_optuna_plots():
         # Save ONLY as PDF
         if plots_dir:
             try:
-                fig_history.write_image(plots_dir / "optuna_optimization_history.pdf")
+                save_plot_with_fallback(
+                    fig_history, plots_dir / "optuna_optimization_history.pdf"
+                )
             except Exception as e:
-                st.warning(f"Could not save Optimization History PDF: {e}")
+                st.warning(f"Could not save Optimization History plot: {e}")
     except Exception as e:
         st.warning(f"Could not generate Optimization History plot: {e}")
 
@@ -230,9 +233,11 @@ def render_optuna_plots():
         # Save ONLY as PDF
         if plots_dir:
             try:
-                fig_importance.write_image(plots_dir / "optuna_param_importance.pdf")
+                save_plot_with_fallback(
+                    fig_importance, plots_dir / "optuna_param_importance.pdf"
+                )
             except Exception as e:
-                st.warning(f"Could not save Parameter Importance PDF: {e}")
+                st.warning(f"Could not save Parameter Importance plot: {e}")
     except Exception as e:
         st.warning(f"Could not generate Parameter Importance plot: {e}")
 
@@ -283,9 +288,11 @@ def render_final_results():
 
                     pdf_path = plots_dir / "parity_plot.pdf"
                     try:
-                        fig_parity.write_image(pdf_path)
+                        save_plot_with_fallback(
+                            fig_parity, pdf_path
+                        )
                     except Exception as e:
-                        st.warning(f"Could not save parity plot PDF: {e}")
+                        st.warning(f"Could not save parity plot: {e}")
 
                 st.markdown("---")
 

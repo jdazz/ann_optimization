@@ -15,6 +15,7 @@ from src.train import optimization, train_final_model
 from src.model import define_net_regression
 from src.plot import make_plotly_figure
 from utils.save_onnx import export_to_onnx
+from utils.plot_utils import save_plot_with_fallback
 from utils.run_manager import (
     derive_dataset_name,
     make_config_hash,
@@ -85,8 +86,10 @@ def run_training_pipeline(
                     y_true = df[y_true_cols].values.flatten()
                     y_pred = df[y_pred_cols].values.flatten()
                     fig = make_plotly_figure(y_pred, y_true)
-                    fig.write_image(os.path.join(plots_dir, "parity_plot.pdf"))
-                    send_update("log_messages", "Saved parity plot (worker).")
+                    saved_path, _, _ = save_plot_with_fallback(
+                        fig, os.path.join(plots_dir, "parity_plot.pdf")
+                    )
+                    send_update("log_messages", f"Saved parity plot to {saved_path.name}")
             except Exception as e:
                 append_run_log(target_dir, f"[plot_error] Parity plot failed: {e}")
 
@@ -94,13 +97,17 @@ def run_training_pipeline(
         if study_obj is not None:
             try:
                 fig_hist = ov.plot_optimization_history(study_obj)
-                fig_hist.write_image(os.path.join(plots_dir, "optuna_optimization_history.pdf"))
+                save_plot_with_fallback(
+                    fig_hist, os.path.join(plots_dir, "optuna_optimization_history.pdf")
+                )
             except Exception as e:
                 append_run_log(target_dir, f"[plot_error] Optuna history plot failed: {e}")
 
             try:
                 fig_imp = ov.plot_param_importances(study_obj)
-                fig_imp.write_image(os.path.join(plots_dir, "optuna_param_importance.pdf"))
+                save_plot_with_fallback(
+                    fig_imp, os.path.join(plots_dir, "optuna_param_importance.pdf")
+                )
             except Exception as e:
                 append_run_log(target_dir, f"[plot_error] Optuna importance plot failed: {e}")
 
@@ -228,6 +235,7 @@ def run_training_pipeline(
             send_update("final_onnx_path", final_onnx_path)
             send_update("best_params_so_far", best_params)
             send_update("is_running", False)
+            send_update("is_resumable", False)
 
             # Read best_metrics.json from run_dir (it will move with finalize)
             raw_metrics = read_value_file(run_dir, "best_metrics.json")
@@ -258,6 +266,7 @@ def run_training_pipeline(
 
             send_update("best_model_path", final_model_path)
             send_update("final_model_path", final_model_path)
+            send_update("run_status", "DONE")
             if os.path.exists(final_onnx_path):
                 send_update("best_onnx_path", final_onnx_path)
                 send_update("final_onnx_path", final_onnx_path)

@@ -5,6 +5,7 @@ import io
 import zipfile
 import threading
 from collections import deque
+from datetime import datetime
 import queue
 import shutil
 
@@ -419,7 +420,7 @@ def list_completed_runs(base_dir="runs"):
 
 def list_previous_runs(base_dir="runs"):
     """
-    Return list of (display_name, status, run_path or None, zip_path or None)
+    Return list of (display_name, status, run_path or None, zip_path or None, started_at or None)
     Includes DONE/ABORTED/FAILED folders and orphaned zip archives.
     """
     runs_map = {}
@@ -432,11 +433,30 @@ def list_previous_runs(base_dir="runs"):
             status = name.rsplit("__", 1)[-1]
             if status in ("DONE", "ABORTED", "FAILED"):
                 run_path = os.path.join(base_dir, name)
+                started_at = None
                 if os.path.isdir(run_path):
+                    # Try summary.txt Started timestamp; fall back to folder mtime
+                    summary_path = os.path.join(run_path, "summary.txt")
+                    if os.path.exists(summary_path):
+                        try:
+                            with open(summary_path, "r") as f:
+                                for line in f:
+                                    if line.startswith("Started:"):
+                                        started_at = line.split("Started:", 1)[1].strip()
+                                        break
+                        except Exception:
+                            started_at = None
+                    if started_at is None:
+                        try:
+                            ts = os.path.getmtime(run_path)
+                            started_at = datetime.fromtimestamp(ts).isoformat(timespec="minutes")
+                        except Exception:
+                            started_at = None
+
                     zip_path = f"{run_path}.zip"
                     zip_exists = zip_path if os.path.exists(zip_path) else None
                     display_name = name.rsplit("__", 1)[0]
-                    runs_map[(display_name, status)] = (display_name, status, run_path, zip_exists)
+                    runs_map[(display_name, status)] = (display_name, status, run_path, zip_exists, started_at)
 
     # Second pass: orphaned zip archives
     for name in os.listdir(base_dir):
@@ -447,92 +467,85 @@ def list_previous_runs(base_dir="runs"):
                 display_name = base.rsplit("__", 1)[0]
                 key = (display_name, status)
                 if key not in runs_map:
-                    runs_map[key] = (display_name, status, None, os.path.join(base_dir, name))
+                    runs_map[key] = (display_name, status, None, os.path.join(base_dir, name), None)
 
     runs = list(runs_map.values())
     return sorted(runs, key=lambda x: x[0], reverse=True)
 
 previous_runs = list_previous_runs()
 if previous_runs:
-    #st.subheader("Previous Runs")
-    with st.expander("View previous runs", expanded=True):
-        # Per-run delete controls
-        for display_name, status, run_path, zip_path in previous_runs:
-            cols = st.columns([6, 1])
-            cols[0].write(f"{display_name} ({status})")
-            if cols[1].button("✕", key=f"del_run_{display_name}_{status}", help="Delete run and archive"):
-                try:
-                    if zip_path and os.path.exists(zip_path):
-                        os.remove(zip_path)
-                except Exception:
-                    pass
-                try:
-                    if os.path.isdir(run_path):
-                        shutil.rmtree(run_path, ignore_errors=True)
-                except Exception:
-                    pass
-                st.rerun()
+    st.subheader("Previous Runs")
+    def format_run(run_tuple):
+        display_name, status, _, _, started_at = run_tuple
+        if started_at:
+            return f"{display_name} ({status}) — {started_at}"
+        return f"{display_name} ({status})"
 
-        names = ["--"] + [f"{r[0]} ({r[1]})" for r in previous_runs]
-        selection = st.selectbox("Select a run to inspect", names, key="completed_run_select")
-        if selection == "(Hide previous runs)":
-            selected = None
-        else:
-            selected = next((r for r in previous_runs if f"{r[0]} ({r[1]})" == selection), None)
+    run_labels = ["-- Select a run --"] + [format_run(r) for r in previous_runs]
+    selection = st.selectbox(
+        "Select a run to view metrics and plots",
+        options=run_labels,
+        index=0,
+        key="completed_run_select",
+    )
 
-        if selected:
-            _, _, run_path, zip_path = selected
-            metrics = read_value_file(run_path, "best_metrics.json") if run_path and os.path.isdir(run_path) else {}
+    selected = None
+    if selection != "-- Select a run --":
+        selected = next((r for r in previous_runs if format_run(r) == selection), None)
 
-            # Metrics display
-            st.title("Performance on unseen data")
-            mcol1, mcol2, mcol3 = st.columns(3)
-            mcol1.metric("NMAE", f"{metrics.get('NMAE', '—')}")
-            mcol2.metric("R²", f"{metrics.get('R2', '—')}")
-            mcol3.metric("Accuracy", f"{metrics.get('Accuracy', '—')}")
+    if selected:
+        _, _, run_path, zip_path, _ = selected
+        metrics = read_value_file(run_path, "best_metrics.json") if run_path and os.path.isdir(run_path) else {}
 
-            # Parity plot (recompute from saved predictions)
-            preds_path = os.path.join(run_path, "best_predictions.csv") if run_path else None
-            if preds_path and os.path.exists(preds_path):
-                try:
-                    df_preds = pd.read_csv(preds_path)
-                    y_true_cols = [c for c in df_preds.columns if c.startswith("y_true_")]
-                    y_pred_cols = [c for c in df_preds.columns if c.startswith("y_pred_")]
-                    if y_true_cols and y_pred_cols:
-                        y_true = df_preds[y_true_cols].values.flatten()
-                        y_pred = df_preds[y_pred_cols].values.flatten()
-                        fig = make_plotly_figure(y_pred, y_true)
-                        st.plotly_chart(fig, use_container_width=True)
-                except Exception as e:
-                    st.info(f"Could not render parity plot: {e}")
+        # Metrics display
+        st.title("Performance on unseen data")
+        mcol1, mcol2, mcol3 = st.columns(3)
+        mcol1.metric("NMAE", f"{metrics.get('NMAE', '—')}")
+        mcol2.metric("R²", f"{metrics.get('R2', '—')}")
+        mcol3.metric("Accuracy", f"{metrics.get('Accuracy', '—')}")
 
-            # Predictions CSV download (if present)
-            if preds_path and os.path.exists(preds_path):
-                try:
-                    with open(preds_path, "rb") as f:
-                        st.download_button(
-                            label="Download predictions (CSV)",
-                            data=f.read(),
-                            file_name="best_predictions.csv",
-                            mime="text/csv",
-                            key=f"dl_preds_{selection}",
-                        )
-                except Exception:
-                    st.info("Predictions file unreadable.")
+        # Parity plot (recompute from saved predictions)
+        preds_path = os.path.join(run_path, "best_predictions.csv") if run_path else None
+        if preds_path and os.path.exists(preds_path):
+            try:
+                df_preds = pd.read_csv(preds_path)
+                y_true_cols = [c for c in df_preds.columns if c.startswith("y_true_")]
+                y_pred_cols = [c for c in df_preds.columns if c.startswith("y_pred_")]
+                if y_true_cols and y_pred_cols:
+                    y_true = df_preds[y_true_cols].values.flatten()
+                    y_pred = df_preds[y_pred_cols].values.flatten()
+                    fig = make_plotly_figure(y_pred, y_true)
+                    st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.info(f"Could not render parity plot: {e}")
 
-            # Zip download
-            if zip_path and os.path.exists(zip_path):
-                try:
-                    with open(zip_path, "rb") as f:
-                        st.download_button(
-                            label="Download run archive (zip)",
-                            data=f.read(),
-                            file_name=os.path.basename(zip_path),
-                            mime="application/zip",
-                            key=f"dl_zip_{selection}",
-                        )
-                except Exception:
-                    st.info("Zip archive unreadable.")
+        # Predictions CSV download (if present)
+        if preds_path and os.path.exists(preds_path):
+            try:
+                with open(preds_path, "rb") as f:
+                    st.download_button(
+                        label="Download predictions (CSV)",
+                        data=f.read(),
+                        file_name="best_predictions.csv",
+                        mime="text/csv",
+                        key=f"dl_preds_{selection}",
+                    )
+            except Exception:
+                st.info("Predictions file unreadable.")
+
+        # Zip download
+        if zip_path and os.path.exists(zip_path):
+            try:
+                with open(zip_path, "rb") as f:
+                    st.download_button(
+                        label="Download run archive (zip)",
+                        data=f.read(),
+                        file_name=os.path.basename(zip_path),
+                        mime="application/zip",
+                        key=f"dl_zip_{selection}",
+                    )
+            except Exception:
+                st.info("Zip archive unreadable.")
 else:
     st.info("No completed run archives found yet.")
 

@@ -352,8 +352,6 @@ def render_live_status(col, best_model_exists):
                 if base_name.endswith("__IN_PROGRESS"):
                     base_name = base_name.rsplit("__", 1)[0]
                 st.write(f'Current run: "{base_name}"')
-        elif ss.get("is_resumable", False):
-            st.warning("Training Paused. Resume or Start New.")
         elif ss.get("final_model_path"):
             st.success("Training finished!")
         else:
