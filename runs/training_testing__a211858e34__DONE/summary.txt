@@ -1,0 +1,56 @@
+Run directory initialized at /Users/jean/Desktop/Python coding support/ann_optimization/runs/training_testing__a211858e34__IN_PROGRESS
+Starting HPO optimization...
+Trial 0 started.
+Loading separate training and testing files.
+No categorical input features found. Skipping One-Hot Encoding.
+⚠️ Missing values detected. Columns: distance, temp_inside. Dropping rows...
+Removed 12 rows due to missing values. Dataset size reduced from 311 to 299.
+Processing separate testing file to align columns and encoding...
+No categorical input features found. Skipping One-Hot Encoding.
+⚠️ Missing values detected. Columns: temp_inside. Dropping rows...
+Removed 1 rows due to missing values. Dataset size reduced from 77 to 76.
+Separate testing file loaded and processed successfully. Shape: (76, 7)
+[best_cv_loss] inf
+[best_intermediate_r2] None
+[best_intermediate_nmae] None
+[best_intermediate_accuracy] None
+Starting new Optuna study for 10 trials.
+New best CV loss: 0.646079. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/training_testing__a211858e34__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/training_testing__a211858e34__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: training_testing__a211858e34__IN_PROGRESS.zip
+Trial 1 started.
+[best_cv_loss] 0.6460785254836082
+[best_intermediate_r2] 0.07544445991516113
+[best_intermediate_nmae] 0.12299691224528446
+[best_intermediate_accuracy] 52.63157894736842
+Trial 0 finished. Loss: 0.646079
+New best CV loss: 0.497586. Retraining candidate best model on full training data...
+Full-data training for new best model completed (via train_final_model).
+[best_model_saved] /Users/jean/Desktop/Python coding support/ann_optimization/runs/training_testing__a211858e34__IN_PROGRESS/best_model.pt
+New best model found.
+[best_predictions_csv] /Users/jean/Desktop/Python coding support/ann_optimization/runs/training_testing__a211858e34__IN_PROGRESS/best_predictions.csv
+Run artifacts zipped for download: training_testing__a211858e34__IN_PROGRESS.zip
+Trial 2 started.
+Trial 3 started.
+Trial 4 started.
+Trial 5 started.
+Trial 6 started.
+Trial 7 started.
+Trial 8 started.
+Trial 9 started.
+Optimization complete. Optuna study object saved for visualization.
+Using best intermediate model for final outputs (renamed to final).
+
+Dataset: training_testing
+Config Hash: a211858e34
+Status: DONE
+Started: 2025-12-10T13:45:32.707163
+Finished: 2025-12-10T13:46:02.667355
+Best CV Loss: 0.49758620038628576
+Test Metrics (best model on unseen data):
+  NMAE: 0.10668920451863041
+  R2: 0.2885756492614746
+  Accuracy: 56.57894736842105Final metrics on unseen data: r2score: 0.2885756492614746, NMA: 0.10668920451863041, accuracy: 56.57894736842105

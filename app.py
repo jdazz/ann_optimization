@@ -80,6 +80,9 @@ if "selected_features" not in st.session_state:
 if "selected_targets" not in st.session_state:
     st.session_state.selected_targets = variables_cfg.get("output_names", None)
 
+# Track whether the user wants to upload a separate test file
+if "show_test_uploader" not in st.session_state:
+    st.session_state.show_test_uploader = False
 
 # ----------------------------------------------------------------------------------
 # 2.1 Hydrate run state + metrics/logs from disk (no thread reattachment)
@@ -219,19 +222,16 @@ def list_run_archives(base_dir="runs"):
 # ----------------------------------------------------------------------------------
 # 3. Data Input Handling, Persistence, and Config Update
 # ----------------------------------------------------------------------------------
-st.subheader("Upload Training & Testing Files")
+st.subheader("Upload Training Data")
 
-# Upload widgets (ephemeral file objects on each rerun)
+# Upload widget (ephemeral file objects on each rerun)
 train_file = st.file_uploader(
     "Upload Training File",
     type=["csv", "xlsx", "json"],
     key="train_file_ephemeral",
 )
-test_file = st.file_uploader(
-    "Upload Test File (optional)",
-    type=["csv", "xlsx", "json"],
-    key="test_file_ephemeral",
-)
+
+test_file = None
 
 # --- Auto detect columns when train file is provided ---
 if train_file is not None:
@@ -242,13 +242,55 @@ if train_file is not None:
         detected_columns = []
 
     st.session_state.available_columns = detected_columns
-    # persist file objects in session_state to survive reruns
+    # Persist train file object to survive reruns
     st.session_state.persistent_train_file_obj = train_file
-    st.session_state.persistent_test_file_obj = test_file
+
+    # Train/test split slider (only until the user opts to upload a test file)
+    if not st.session_state.show_test_uploader:
+        current_split_ratio = (
+            st.session_state.current_ui_config
+            .get("cross_validation", {})
+            .get("test_split_ratio", 0.2)
+        )
+        split_ratio = st.slider(
+            "Train/Test Split Ratio (test % of single file)",
+            min_value=0.05,
+            max_value=0.5,
+            value=float(current_split_ratio),
+            step=0.05,
+            format="%.2f",
+            key="train_test_split_ratio",
+        )
+
+        # Persist split ratio into the working config and config.yaml
+        cv_conf = st.session_state.current_ui_config.setdefault("cross_validation", {})
+        cv_conf["test_split_ratio"] = float(split_ratio)
+        st.session_state.current_ui_config["cross_validation"] = cv_conf
+        save_config(st.session_state.current_ui_config, CONFIG_PATH)
+
+        st.session_state.persistent_test_file_obj = None
+
+        if st.button("Upload test data (optional)", key="reveal_test_upload_btn"):
+            st.session_state.show_test_uploader = True
+            st.session_state.persistent_test_file_obj = None
+            st.rerun()
+    else:
+        test_file = st.file_uploader(
+            "Upload Test File (optional)",
+            type=["csv", "xlsx", "json"],
+            key="test_file_ephemeral",
+        )
+        st.session_state.persistent_test_file_obj = test_file
+
+        if st.button("Go back to single-file split", key="hide_test_upload_btn"):
+            st.session_state.show_test_uploader = False
+            st.session_state.persistent_test_file_obj = None
+            st.rerun()
 else:
     st.session_state.available_columns = []
     st.session_state.persistent_train_file_obj = None
     st.session_state.persistent_test_file_obj = None
+    st.session_state.show_test_uploader = False
 
 
 # ----------------------------------------------------------------------------------

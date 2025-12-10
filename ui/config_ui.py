@@ -67,18 +67,8 @@ def render_config_ui(default_config, config_path):
         help="If checked, input features will be normalized to have zero mean and unit variance."
     )
     
-    # --- 3. Test Split Ratio (Moved here) ---
-    current_ratio = cv_conf.get("test_split_ratio", 0.2)
-    ui_config["cross_validation"]["test_split_ratio"] = st.slider(
-        "Single File Train/Test Split Ratio (Test %)",
-        min_value=0.05, 
-        max_value=0.5, 
-        value=float(current_ratio),
-        step=0.05,
-        format="%.2f",
-        key='test_split_ratio_slider',
-        help="If only one data file is uploaded, this percentage is reserved for the Test Set."
-    )
+    # Keep the current split ratio from config; UI is handled in the upload flow.
+    ui_config["cross_validation"]["test_split_ratio"] = cv_conf.get("test_split_ratio", 0.2)
     st.markdown("---")
 
     
