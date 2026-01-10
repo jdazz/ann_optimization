@@ -19,7 +19,7 @@ hyperparameter_search_space:
     low: 50
     high: 450
   learning_rate:
-    low: 0.015848931924611134
+    low: 0.015848931924611137
     high: 0.1
   n_samples: 10
   optimizer_name:
