@@ -1,4 +1,5 @@
 import os
+import errno
 import time
 import json
 import io
@@ -23,7 +24,7 @@ from src.plot import make_plot, make_plotly_figure
 
 # --- Utilities ---
 from ui.config_ui import render_config_ui
-from utils.config_utils import load_config, save_config
+from utils.config_utils import save_config
 from utils.initialize_session import initialize_session_state
 from utils.queue_utils import process_queue_updates
 from utils.state_manager import handle_thread_reattachment
@@ -47,7 +48,6 @@ from ui.results_panel import render_final_results
 # 1. Config Loading
 # ----------------------------------------------------------------------------------
 CONFIG_PATH = "config.yaml"
-DEFAULT_CONFIG = load_config(CONFIG_PATH)
 
 
 # ----------------------------------------------------------------------------------
@@ -66,8 +66,7 @@ if "log_messages" not in st.session_state or st.session_state.log_messages is No
 
 # Ensure current_ui_config exists and is a dict
 if "current_ui_config" not in st.session_state or st.session_state.current_ui_config is None:
-    # Use a copy of DEFAULT_CONFIG as working config in the UI
-    st.session_state.current_ui_config = DEFAULT_CONFIG.copy()
+    st.session_state.current_ui_config = st.session_state.config.copy()
 
 # OPTIONAL: Initialize selected features/target from config if not already set
 variables_cfg = st.session_state.current_ui_config.get("variables", {})
@@ -398,8 +397,7 @@ if st.session_state.available_columns:
 # 5. Config UI (model / HPO / CV settings)
 # ----------------------------------------------------------------------------------
 render_config_ui(
-    DEFAULT_CONFIG,
-    CONFIG_PATH,
+    st.session_state.current_ui_config,
 )
 
 st.markdown("---")
@@ -465,12 +463,20 @@ def list_previous_runs(base_dir="runs"):
     Return list of (display_name, status, run_path or None, zip_path or None, started_at or None)
     Includes DONE/ABORTED/FAILED folders and orphaned zip archives.
     """
+    try:
+        entries = os.listdir(base_dir)
+    except OSError as e:
+        if e.errno == errno.EMFILE:
+            st.warning("Too many open files to list previous runs. Refresh the page and retry.")
+            return []
+        raise
+
     runs_map = {}
     if not os.path.isdir(base_dir):
         return []
 
     # First pass: folders
-    for name in os.listdir(base_dir):
+    for name in entries:
         if "__" in name:
             status = name.rsplit("__", 1)[-1]
             if status in ("DONE", "ABORTED", "FAILED"):
@@ -501,7 +507,7 @@ def list_previous_runs(base_dir="runs"):
                     runs_map[(display_name, status)] = (display_name, status, run_path, zip_exists, started_at)
 
     # Second pass: orphaned zip archives
-    for name in os.listdir(base_dir):
+    for name in entries:
         if name.endswith(".zip") and "__" in name:
             base = name[:-4]  # strip .zip
             status = base.rsplit("__", 1)[-1]

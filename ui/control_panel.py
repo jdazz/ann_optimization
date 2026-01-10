@@ -7,9 +7,10 @@ import time
 import os
 import io
 import zipfile
+import copy
 from sklearn.preprocessing import StandardScaler
 from utils.run_manager import read_value_file
-from utils.config_utils import save_config, load_config
+from utils.config_utils import save_config
 from utils.state_manager import initialize_run_state, reset_resumable_flag
 from utils.data_utils import initialize_training_dataset
 from utils.save_scaler import save_scaler_to_json
@@ -46,9 +47,9 @@ def handle_run_pipeline(is_resume: bool):
     # 1. Configuration Setup
     latest_ui_config = st.session_state.current_ui_config
     try:
-        # Persist UI config to disk, then reload as the "authoritative" config
+        # Persist UI config to disk, then reuse the in-memory copy as authoritative
         save_config(latest_ui_config, CONFIG_PATH)
-        st.session_state.config = load_config(CONFIG_PATH)
+        st.session_state.config = copy.deepcopy(latest_ui_config)
 
         st.session_state.total_trials = (
             st.session_state.config
@@ -354,8 +355,6 @@ def render_live_status(col, best_model_exists):
                 st.write(f'Current run: "{base_name}"')
         elif ss.get("final_model_path"):
             st.success("Training finished!")
-        else:
-            st.warning("Ready to start.")
 
         # ---------------------------------------------------------------------
         # Trial progress bar

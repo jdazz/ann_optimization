@@ -3,9 +3,8 @@
 import streamlit as st
 import numpy as np
 import copy
-from utils.config_utils import load_config, save_config
 
-def render_config_ui(default_config, config_path):
+def render_config_ui(current_config_from_state):
     """
     Renders the Model Configuration and Advanced Settings in a single column.
     File upload and primary column selection are assumed to be handled in app.py.
@@ -18,14 +17,7 @@ def render_config_ui(default_config, config_path):
     st.markdown("## Model Configuration")
     st.info("Adjust parameters below. All settings update automatically upon change.") 
 
-    # Load config and handle error
-    try:
-        current_config = load_config(config_path)
-    except FileNotFoundError:
-        st.error(f"Error: config.yaml not found.")
-        st.stop()
-
-    ui_config = copy.deepcopy(current_config)
+    ui_config = copy.deepcopy(current_config_from_state or {})
 
     # Initialize new sections if they don't exist (same as before)
     if "variables" not in ui_config:

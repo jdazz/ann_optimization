@@ -1,123 +1,58 @@
-# ANN Optimization
+# ANN Optimization Dashboard (Streamlit)
 
-This repository provides a fully automated framework for optimizing an Artificial Neural Network (ANN) using Optuna-based hyperparameter search.
-The system is designed to identify the best-performing network configuration for user-defined regression tasks.
-
-
-Workflow Overview
-
-1. Configurable Inputs & Outputs
-
-You can define which dataset columns act as input features and target variables.
-All model settings—including architecture and search space—are controlled via a config.yaml file.
-
-
-2. Automated Hyperparameter Optimization
-
-Optuna searches through a wide range of hyperparameters, such as:
-	•	Learning rate
-	•	Batch size
-	•	Number of hidden layers
-	•	Neurons per layer
-	•	Activation functions
-	•	Training epochs
-
-Each trial is trained and validated using K-fold cross-validation, ensuring robust and unbiased model evaluation.
-
-
-3. Model Selection & Final Training
-
-After all trials finish:
-	•	Optuna selects the best-performing hyperparameter set based on validation loss.
-	•	The ANN is rebuilt using these optimal hyperparameters.
-	•	The final model is re-trained on the full training dataset to maximize predictive performance.
-
-
-4. Model Saving & Checkpointing
-
-The best model (architecture + weights) is saved for:
-	•	Reproducibility
-	•	Deployment
-	•	Future inference
-
-
-5. Testing on Unseen Data
-
-The final model is evaluated on a separate test dataset.
-The system reports: R² Score, Normalized Mean Absolute Error (NMAE), Mean Relative Error (MRE) distribution and Accuracy threshold metrics (e.g., percentage of predictions within X% error)
-
-
-Summary
-
-This pipeline provides a systematic, reproducible, and fully automated approach to ANN training and optimization—from hyperparameter search to final performance reporting.
+Interactive Streamlit app for hyperparameter optimization of ANN regressors using Optuna. Upload data, tune the search space, run trials, and download trained models from the browser.
 
 ---
 
-## Environment Setup
+## Features
+- Web UI for loading tabular data, selecting features/targets, and setting train/test handling (split slider or separate test file).
+- Optuna-powered search for ANN hyperparameters with live metrics (CV loss, R², NMAE).
+- Parity plots and Optuna visualizations for completed runs.
+- One-click downloads for models, predictions, and zipped run artifacts.
+- Runs and config persisted to disk so you can reload and keep progress.
 
-To install all requirements run:
+## Prerequisites
+- Python 3.10+
+- Install dependencies:
+  ```bash
+  pip install -r requirements.txt
+  ```
 
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## Configuration
-
-Before running the script, **update the `config.yaml` file** to match your data setup:
-
-- Set correct paths for your training and testing files:
-```yaml
-training_path: "data/training.json"
-testing_path: "data/testing.json"
-```
-
-- Define the input features and the output target:
-```yaml
-input_variables: ['feature1', 'feature2', 'feature3']
-output_variables: ['target']
-```
-
-> ATTENTION: Accepted data types: JSON (.json), CSV (.csv), Excel (.xls/.xlsx) and Parquet (.parquet).
-> Data must have no missing values.
----
-
-## Run the Program
-
-Execute the main script:
-
-```bash
-python main.py
-```
-
----
-
-## Output
-
-Model performance metrics printed in the console include:
-- Test Accuracy
-- NMAE (Normalized Mean Absolute Error)
-- R² Score
-
-The best model is saved in: 
-
-```bash
-models/ANN_best_model.pt
-```
-
----
-
-## Web App integration
-
-This project includes a web interface built with Streamlit that allows users to upload their training and testing datasets, as well as a configuration file, directly through a browser. The web app automates the ANN optimization process, trains the model, evaluates performance on unseen data, and displays the results including test accuracy, NMAE, R² score, and the model architecture. This provides an accessible, user-friendly way to run the ANN optimization without needing to interact directly with the code. You can find this Web App at this location : ???
-
+## Run the app
 ```bash
 streamlit run app.py
 ```
+Open the URL shown in the terminal (usually http://localhost:8501).
 
----
+## Using the dashboard
+1) **Upload data**
+   - Upload a training file (`csv`, `xlsx`, or `json`).
+   - Optional: click **“Upload test data (optional)”** to provide a separate test file; otherwise use the train/test split slider.
+2) **Select columns**  
+   Choose feature columns (X) and a target column (Y) from the detected headers.
+3) **Configure training**  
+   Adjust trials, learning rate/epochs, batch size, hidden layers/neurons, activation functions, optimizer, and CV settings. Enable feature standardization if needed.
+4) **Run + monitor**  
+   Start the run from the control panel and watch live metrics/logs update.
+5) **Review results**  
+   Inspect best metrics, parity plot, and Optuna charts, then download artifacts directly from the UI.
+
+## Configuration
+- Working config lives in `config.yaml`; UI changes persist automatically and seed the next reload.
+- Key sections:
+  - `variables`: feature/target names.
+  - `cross_validation`: split ratio, k-folds, and standardization toggle.
+  - `hyperparameter_search_space` and `network`: bounds/choices for the Optuna search.
+- You can edit `config.yaml` manually before launching if you prefer.
+
+## Outputs & folders
+- `runs/<dataset>__<status>`: per-run folders with best model (`.pt`), predictions CSV, metrics, logs, and a zipped archive.
+- `optuna_study.db`: Optuna study storage (SQLite).
+- `temp_data/`: staging area for uploads (ignored by git).
+
 
 ## Acknowledgements
+Developed by the Institute for Dynamic Systems and Control at ETH Zürich.
 
-This program was developped at the Institute for Dynamic Systems and Control at ETHZ, ???
+## License
+MIT. See `LICENSE` for details.
