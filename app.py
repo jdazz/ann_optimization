@@ -37,6 +37,7 @@ from utils.run_manager import (
     find_any_in_progress,
     read_value_file,
     zip_run_dir,
+    cleanup_stale_in_progress,
 )
 
 # --- UI Components ---
@@ -55,6 +56,7 @@ CONFIG_PATH = "config.yaml"
 # ----------------------------------------------------------------------------------
 st.set_page_config(layout="wide")
 st.title("ANN Optimization Dashboard")
+st.set_option("client.showErrorDetails", False)  # hide noisy frontend tracebacks
 
 # Initialize base session state (may already set current_ui_config, log_messages, etc.)
 initialize_session_state()
@@ -83,6 +85,19 @@ if "selected_targets" not in st.session_state:
 if "show_test_uploader" not in st.session_state:
     st.session_state.show_test_uploader = False
 
+def swallow_typeerror(func, *args, **kwargs):
+    """
+    Run a UI-render function and silence TypeError (e.g., from missing JS modules
+    on certain hosted environments) to avoid breaking the page.
+    """
+    try:
+        return func(*args, **kwargs)
+    except TypeError:
+        # Optional: log quietly for debugging without surfacing to users
+        if "log_messages" in st.session_state:
+            st.session_state.log_messages.appendleft("Suppressed a frontend TypeError.")
+        return None
+
 # ----------------------------------------------------------------------------------
 # 2.1 Hydrate run state + metrics/logs from disk (no thread reattachment)
 # ----------------------------------------------------------------------------------
@@ -93,6 +108,17 @@ def hydrate_from_disk():
     - Update run_status, current_run_dir, is_running
     - Hydrate metrics and summary logs from the run folder
     """
+
+    # Clean up stale IN_PROGRESS folders when no worker is alive to prevent endless reruns
+    thread = st.session_state.get("training_thread")
+    thread_alive = thread and isinstance(thread, threading.Thread) and thread.is_alive()
+    if not st.session_state.get("is_running") and not thread_alive:
+        cleaned = cleanup_stale_in_progress("runs")
+        if cleaned:
+            recovered = ", ".join(os.path.basename(p) for p in cleaned)
+            st.session_state.log_messages.appendleft(
+                f"Recovered stale runs marked as FAILED: {recovered}"
+            )
 
     status, path, run_id = find_any_in_progress("runs")
 
@@ -223,12 +249,34 @@ def list_run_archives(base_dir="runs"):
 # ----------------------------------------------------------------------------------
 st.subheader("Upload Training Data")
 
+# Optional sample dataset toggle
+use_sample_data = st.checkbox("Use example data (Boston Housing Dataset)", key="use_sample_data")
+
+# Decide data source: sample vs user upload
+sample_file = None
+if use_sample_data:
+    sample_path = os.path.join("sample_data", "HousingData.csv")
+    try:
+        with open(sample_path, "rb") as f:
+            sample_bytes = f.read()
+        sample_file = io.BytesIO(sample_bytes)
+        sample_file.name = "HousingData.csv"
+        st.info("Using bundled Boston Housing sample data.")
+        st.session_state.show_test_uploader = False
+        st.session_state.persistent_test_file_obj = None
+    except Exception as e:
+        st.error(f"Failed to load sample data: {e}")
+
 # Upload widget (ephemeral file objects on each rerun)
-train_file = st.file_uploader(
-    "Upload Training File",
-    type=["csv", "xlsx", "json"],
-    key="train_file_ephemeral",
-)
+train_file = None
+if not use_sample_data:
+    train_file = st.file_uploader(
+        "Upload Training File",
+        type=["csv", "xlsx", "json"],
+        key="train_file_ephemeral",
+    )
+else:
+    train_file = sample_file
 
 test_file = None
 
@@ -244,52 +292,66 @@ if train_file is not None:
     # Persist train file object to survive reruns
     st.session_state.persistent_train_file_obj = train_file
 
-    # Train/test split slider (only until the user opts to upload a test file)
-    if not st.session_state.show_test_uploader:
-        current_split_ratio = (
-            st.session_state.current_ui_config
-            .get("cross_validation", {})
-            .get("test_split_ratio", 0.2)
-        )
-        split_ratio = st.slider(
-            "Train/Test Split Ratio (test % of single file)",
-            min_value=0.05,
-            max_value=0.5,
-            value=float(current_split_ratio),
-            step=0.05,
-            format="%.2f",
-            key="train_test_split_ratio",
-        )
+    # Auto-select target/features for sample data
+    if use_sample_data and detected_columns:
+        target_col = "median_value"
+        st.session_state.selected_targets = target_col
+        st.session_state.selected_features = [
+            col for col in detected_columns if col != target_col
+        ]
 
-        # Persist split ratio into the working config and config.yaml
-        cv_conf = st.session_state.current_ui_config.setdefault("cross_validation", {})
-        cv_conf["test_split_ratio"] = float(split_ratio)
-        st.session_state.current_ui_config["cross_validation"] = cv_conf
-        save_config(st.session_state.current_ui_config, CONFIG_PATH)
+    # Train/test split or optional test upload (skip entirely for sample data)
+    if not use_sample_data:
+        if not st.session_state.show_test_uploader:
+            current_split_ratio = (
+                st.session_state.current_ui_config
+                .get("cross_validation", {})
+                .get("test_split_ratio", 0.2)
+            )
+            split_ratio = st.slider(
+                "Train/Test Split Ratio (test % of single file)",
+                min_value=0.05,
+                max_value=0.5,
+                value=float(current_split_ratio),
+                step=0.05,
+                format="%.2f",
+                key="train_test_split_ratio",
+            )
 
-        st.session_state.persistent_test_file_obj = None
+            # Persist split ratio into the working config and config.yaml
+            cv_conf = st.session_state.current_ui_config.setdefault("cross_validation", {})
+            cv_conf["test_split_ratio"] = float(split_ratio)
+            st.session_state.current_ui_config["cross_validation"] = cv_conf
+            save_config(st.session_state.current_ui_config, CONFIG_PATH)
 
-        if st.button("Upload test data (optional)", key="reveal_test_upload_btn"):
-            st.session_state.show_test_uploader = True
             st.session_state.persistent_test_file_obj = None
-            st.rerun()
+
+            if st.button("Upload test data (optional)", key="reveal_test_upload_btn"):
+                st.session_state.show_test_uploader = True
+                st.session_state.persistent_test_file_obj = None
+                st.rerun()
+        else:
+            test_file = st.file_uploader(
+                "Upload Test File (optional)",
+                type=["csv", "xlsx", "json"],
+                key="test_file_ephemeral",
+            )
+            st.session_state.persistent_test_file_obj = test_file
+
+            if st.button("Go back to single-file split", key="hide_test_upload_btn"):
+                st.session_state.show_test_uploader = False
+                st.session_state.persistent_test_file_obj = None
+                st.rerun()
     else:
-        test_file = st.file_uploader(
-            "Upload Test File (optional)",
-            type=["csv", "xlsx", "json"],
-            key="test_file_ephemeral",
-        )
-        st.session_state.persistent_test_file_obj = test_file
-
-        if st.button("Go back to single-file split", key="hide_test_upload_btn"):
-            st.session_state.show_test_uploader = False
-            st.session_state.persistent_test_file_obj = None
-            st.rerun()
-else:
+        st.session_state.persistent_test_file_obj = None
+        st.session_state.show_test_uploader = False
+elif not use_sample_data:
     st.session_state.available_columns = []
     st.session_state.persistent_train_file_obj = None
     st.session_state.persistent_test_file_obj = None
     st.session_state.show_test_uploader = False
+elif use_sample_data and train_file is None:
+    st.session_state.available_columns = []
 
 
 # ----------------------------------------------------------------------------------
@@ -327,12 +389,15 @@ if st.session_state.available_columns:
     if not current_features and available_cols:
         current_features = available_cols[:-1]
 
-    st.multiselect(
-        "Select feature columns (X)",
-        options=available_cols,
-        default=current_features,
-        key="selected_features",  # stored in session_state
-    )
+    # Avoid Streamlit warning: only provide default when widget key is unset
+    multiselect_kwargs = {
+        "label": "Select feature columns (X)",
+        "options": available_cols,
+        "key": "selected_features",
+    }
+    if "selected_features" not in st.session_state:
+        multiselect_kwargs["default"] = current_features
+    st.multiselect(**multiselect_kwargs)
 
     # --------------------------------------------------------------------------
     # 4.2 Target Selectbox
@@ -441,7 +506,7 @@ render_control_panel()
 # ----------------------------------------------------------------------------------
 # 8. Final Results Section + Completed Archives
 # ----------------------------------------------------------------------------------
-render_final_results()
+swallow_typeerror(render_final_results)
 
 # Completed runs explorer
 def list_completed_runs(base_dir="runs"):
@@ -555,8 +620,10 @@ if previous_runs:
         # Parity plot (recompute from saved predictions)
         preds_path = os.path.join(run_path, "best_predictions.csv") if run_path else None
         if preds_path and os.path.exists(preds_path):
+            # Limit rows to avoid long load times on very large prediction files
+            max_rows_for_plot = 5000
             try:
-                df_preds = pd.read_csv(preds_path)
+                df_preds = pd.read_csv(preds_path, nrows=max_rows_for_plot)
                 y_true_cols = [c for c in df_preds.columns if c.startswith("y_true_")]
                 y_pred_cols = [c for c in df_preds.columns if c.startswith("y_pred_")]
                 if y_true_cols and y_pred_cols:
@@ -564,6 +631,8 @@ if previous_runs:
                     y_pred = df_preds[y_pred_cols].values.flatten()
                     fig = make_plotly_figure(y_pred, y_true)
                     st.plotly_chart(fig, use_container_width=True)
+                    if os.path.getsize(preds_path) > 0 and len(df_preds) == max_rows_for_plot:
+                        st.caption(f"Showing first {max_rows_for_plot:,} rows for speed.")
             except Exception as e:
                 st.info(f"Could not render parity plot: {e}")
 
@@ -608,7 +677,8 @@ queue_data_received = process_queue_updates()
 # 2. Decide whether to poll again
 # Treat "IN_PROGRESS" status from the run folder as the source of truth
 run_status = st.session_state.get("run_status")
-should_poll = (run_status == "IN_PROGRESS") or st.session_state.get("is_resumable", False)
+should_poll = (run_status == "IN_PROGRESS") 
+#or st.session_state.get("is_resumable", False)
 
 if queue_data_received:
     st.rerun()

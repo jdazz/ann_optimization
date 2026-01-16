@@ -19,7 +19,7 @@ hyperparameter_search_space:
     low: 50
     high: 450
   learning_rate:
-    low: 0.015848931924611137
+    low: 0.01584893192461114
     high: 0.1
   n_samples: 10
   optimizer_name:
@@ -38,7 +38,7 @@ network:
     high: 2
   hidden_neurons:
     low: 16
-    high: 122
+    high: 128
   weight_initialization: xavier_uniform
 sampler:
   type: TPESampler
@@ -49,15 +49,29 @@ targets:
   nmae_target: 0.08
   r2_target: 0.99
 variables:
-  input_names: 'distance
+  input_names: 'crime_rate
 
-    speed
+    residential_zone
 
-    temp_inside
+    industrial_zone
 
-    temp_outside
+    charles_river
 
-    AC
+    nitric_oxide_concentration
 
-    rain'
-  output_names: consume
+    rooms
+
+    age
+
+    distance
+
+    highway_accessibility
+
+    tax_rate
+
+    pupil_teacher_ratio
+
+    black_population
+
+    lower_status_population'
+  output_names: median_value

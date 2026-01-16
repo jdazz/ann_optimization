@@ -1,8 +1,6 @@
 # ui/results_panel.py
 
 import os
-import io
-import zipfile
 import copy
 
 import streamlit as st
@@ -13,7 +11,6 @@ import pandas as pd  # for isinstance checks if needed
 from src.dataset import Dataset
 from src.model_test import test
 from src.plot import make_plotly_figure
-from utils.save_scaler import save_scaler_to_json
 from utils.run_manager import zip_run_dir
 from utils.plot_utils import save_plot_with_fallback
 from pathlib import Path
@@ -116,73 +113,58 @@ def run_final_test():
 
 
 def render_final_download():
-    """Renders the final model download options (ZIP or separate PT/ONNX)."""
+    """Offer run archive (zip) and predictions (csv) downloads."""
+    run_dir = st.session_state.get("current_run_dir")
+    if not run_dir:
+        st.info("No run directory found to download artifacts.")
+        return
 
-    should_standardize_config = (
-        st.session_state.config.get("cross_validation", {}).get("standardize_features", False)
-    )
+    # Ensure we have a zip archive for the run
+    zip_path = st.session_state.get("final_zip_path")
+    if not zip_path or not os.path.exists(zip_path):
+        zip_path = zip_run_dir(run_dir)
+        if zip_path:
+            st.session_state.final_zip_path = zip_path
 
-    try:
-        with open(st.session_state.final_model_path, "rb") as f:
-            final_model_data = f.read()
+    preds_path = os.path.join(run_dir, "best_predictions.csv")
 
-        fitted_scaler = st.session_state.get("fitted_scaler")
-        final_onnx_path = st.session_state.get("final_onnx_path")
-        onnx_exists = final_onnx_path and os.path.exists(final_onnx_path)
+    dl_col1, dl_col2 = st.columns(2)
 
-        if fitted_scaler and should_standardize_config:
-            scaler_json_data = save_scaler_to_json(
-                fitted_scaler, st.session_state.dataset_input_vars
-            )
-
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(
-                zip_buffer, "a", zipfile.ZIP_DEFLATED, False
-            ) as zip_file:
-                zip_file.writestr("final_model.pt", final_model_data)
-                zip_file.writestr("scaler_params.json", scaler_json_data)
-                if onnx_exists:
-                    with open(final_onnx_path, "rb") as f_onnx:
-                        zip_file.writestr("final_model.onnx", f_onnx.read())
-
-            st.download_button(
-                label="Download final model (.zip)",
-                data=zip_buffer.getvalue(),
-                file_name="ANN_final_deployment_package.zip",
-                mime="application/zip",
-                type="primary",
-            )
+    with dl_col1:
+        if zip_path and os.path.exists(zip_path):
+            try:
+                with open(zip_path, "rb") as f_zip:
+                    st.download_button(
+                        label="Download run archive (.zip)",
+                        data=f_zip.read(),
+                        file_name=os.path.basename(zip_path),
+                        mime="application/zip",
+                        type="primary",
+                    )
+            except Exception as e:
+                st.error(f"Could not read run archive: {e}")
         else:
-            dl_col1, dl_col2 = st.columns(2)
+            st.info("Run archive not available.")
 
-            with dl_col1:
-                st.download_button(
-                    label="Download PyTorch (.pt)",
-                    data=final_model_data,
-                    file_name="final_model.pt",
-                    mime="application/octet-stream",
-                    type="primary",
-                )
-
-            if onnx_exists:
-                with dl_col2:
-                    with open(final_onnx_path, "rb") as f_onnx:
-                        st.download_button(
-                            label="Download ONNX (.onnx)",
-                            data=f_onnx.read(),
-                            file_name="final_model.onnx",
-                            mime="application/octet-stream",
-                            type="secondary",
-                        )
-            else:
-                with dl_col2:
-                    st.info("ONNX file not available.")
-
-    except Exception as e:
-        st.error(f"Error preparing final model for download: {e}")
+    with dl_col2:
+        if preds_path and os.path.exists(preds_path):
+            try:
+                with open(preds_path, "rb") as f_preds:
+                    st.download_button(
+                        label="Download predictions (CSV)",
+                        data=f_preds.read(),
+                        file_name="best_predictions.csv",
+                        mime="text/csv",
+                        type="secondary",
+                    )
+            except Exception as e:
+                st.error(f"Could not read predictions file: {e}")
+        else:
+            st.info("Predictions file not available.")
 
 
 from pathlib import Path
+from optuna.importance import FanovaImportanceEvaluator
 
 def render_optuna_plots():
     """Renders the Optuna optimization plots and saves them as PDFs only."""
@@ -204,6 +186,9 @@ def render_optuna_plots():
         return
 
     st.subheader("Hyperparameter Optimization Analysis")
+
+    # Fixed-seed evaluator prevents jitter across reruns
+    importance_evaluator = FanovaImportanceEvaluator(seed=0)
 
     # ------------------------------------------------------------------
     # Optimization history
@@ -227,7 +212,9 @@ def render_optuna_plots():
     # Parameter importance
     # ------------------------------------------------------------------
     try:
-        fig_importance = ov.plot_param_importances(study)
+        fig_importance = ov.plot_param_importances(
+            study, evaluator=importance_evaluator
+        )
         st.plotly_chart(fig_importance, use_container_width=True)
 
         # Save ONLY as PDF
@@ -297,7 +284,13 @@ def render_final_results():
                 st.markdown("---")
 
             # Optuna Plots (only PDF saving)
-            render_optuna_plots()
+            try:
+                render_optuna_plots()
+            except TypeError:
+                if "log_messages" in st.session_state:
+                    st.session_state.log_messages.appendleft(
+                        "Skipped Optuna plots due to a frontend TypeError."
+                    )
 
             # After plots saved, zip the run directory
             run_dir = st.session_state.get("current_run_dir")

@@ -337,3 +337,31 @@ def find_any_in_progress(base_dir: str):
                 run_id = name.rsplit("__", 1)[0]
                 return "IN_PROGRESS", path, run_id
     return None, None, None
+
+
+def cleanup_stale_in_progress(base_dir: str):
+    """
+    Rename any dangling __IN_PROGRESS folders to __FAILED to avoid keeping the UI
+    in a perpetual polling state when no worker is alive.
+    """
+    cleaned = []
+    if not os.path.isdir(base_dir):
+        return cleaned
+
+    for name in os.listdir(base_dir):
+        if not name.endswith("__IN_PROGRESS"):
+            continue
+        path = os.path.join(base_dir, name)
+        if not os.path.isdir(path):
+            continue
+
+        target = os.path.join(base_dir, f"{name.rsplit('__', 1)[0]}__FAILED")
+        try:
+            if os.path.isdir(target):
+                shutil.rmtree(target, ignore_errors=True)
+            os.replace(path, target)
+            cleaned.append(target)
+        except Exception:
+            continue
+
+    return cleaned

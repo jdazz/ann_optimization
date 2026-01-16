@@ -8,6 +8,7 @@ import traceback
 import queue
 import pandas as pd
 import optuna.visualization as ov
+from optuna.importance import FanovaImportanceEvaluator
 
 from datetime import datetime
 
@@ -104,7 +105,10 @@ def run_training_pipeline(
                 append_run_log(target_dir, f"[plot_error] Optuna history plot failed: {e}")
 
             try:
-                fig_imp = ov.plot_param_importances(study_obj)
+                evaluator = FanovaImportanceEvaluator(seed=0)
+                fig_imp = ov.plot_param_importances(
+                    study_obj, evaluator=evaluator
+                )
                 save_plot_with_fallback(
                     fig_imp, os.path.join(plots_dir, "optuna_param_importance.pdf")
                 )
