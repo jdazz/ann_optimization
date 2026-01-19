@@ -284,13 +284,7 @@ def render_final_results():
                 st.markdown("---")
 
             # Optuna Plots (only PDF saving)
-            try:
-                render_optuna_plots()
-            except TypeError:
-                if "log_messages" in st.session_state:
-                    st.session_state.log_messages.appendleft(
-                        "Skipped Optuna plots due to a frontend TypeError."
-                    )
+            render_optuna_plots()
 
             # After plots saved, zip the run directory
             run_dir = st.session_state.get("current_run_dir")

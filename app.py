@@ -56,7 +56,6 @@ CONFIG_PATH = "config.yaml"
 # ----------------------------------------------------------------------------------
 st.set_page_config(layout="wide")
 st.title("ANN Optimization Dashboard")
-st.set_option("client.showErrorDetails", False)  # hide noisy frontend tracebacks
 
 # Initialize base session state (may already set current_ui_config, log_messages, etc.)
 initialize_session_state()
@@ -84,19 +83,6 @@ if "selected_targets" not in st.session_state:
 # Track whether the user wants to upload a separate test file
 if "show_test_uploader" not in st.session_state:
     st.session_state.show_test_uploader = False
-
-def swallow_typeerror(func, *args, **kwargs):
-    """
-    Run a UI-render function and silence TypeError (e.g., from missing JS modules
-    on certain hosted environments) to avoid breaking the page.
-    """
-    try:
-        return func(*args, **kwargs)
-    except TypeError:
-        # Optional: log quietly for debugging without surfacing to users
-        if "log_messages" in st.session_state:
-            st.session_state.log_messages.appendleft("Suppressed a frontend TypeError.")
-        return None
 
 # ----------------------------------------------------------------------------------
 # 2.1 Hydrate run state + metrics/logs from disk (no thread reattachment)
@@ -282,6 +268,19 @@ test_file = None
 
 # --- Auto detect columns when train file is provided ---
 if train_file is not None:
+    # Detect new upload to clear variable selections in config
+    previous_name = st.session_state.get("last_uploaded_train_name")
+    current_name = getattr(train_file, "name", None)
+    if current_name and current_name != previous_name:
+        st.session_state.selected_features = []
+        st.session_state.selected_targets = None
+        st.session_state.pop("last_auto_features_target", None)
+        vars_cfg = st.session_state.current_ui_config.setdefault("variables", {})
+        vars_cfg["input_names"] = ""
+        vars_cfg["output_names"] = ""
+        save_config(st.session_state.current_ui_config, CONFIG_PATH)
+        st.session_state["last_uploaded_train_name"] = current_name
+
     try:
         detected_columns = Dataset.read_columns_from_source(train_file)
     except Exception as e:
@@ -366,56 +365,15 @@ if st.session_state.available_columns:
     vars_cfg = cfg.setdefault("variables", {})
 
     # --------------------------------------------------------------------------
-    # 4.1 Feature Multiselect
-    # --------------------------------------------------------------------------
-    # Keep only features that still exist in the uploaded file
-    current_features = [
-        f for f in st.session_state.selected_features
-        if f in available_cols
-    ]
+    # 4.1 Target Select (shown first)
+    target_options = available_cols if available_cols else ["(No Target Available)"]
 
-    # If nothing selected yet, fall back to config.yaml > variables.input_names
-    if not current_features:
-        input_names_from_cfg = vars_cfg.get("input_names", "")
-        if input_names_from_cfg:
-            from_cfg_list = [
-                c.strip()
-                for c in str(input_names_from_cfg).split("\n")
-                if c.strip() and c.strip() in available_cols
-            ]
-            current_features = from_cfg_list
-
-    # If still empty, default to all columns except the last one
-    if not current_features and available_cols:
-        current_features = available_cols[:-1]
-
-    # Avoid Streamlit warning: only provide default when widget key is unset
-    multiselect_kwargs = {
-        "label": "Select feature columns (X)",
-        "options": available_cols,
-        "key": "selected_features",
-    }
-    if "selected_features" not in st.session_state:
-        multiselect_kwargs["default"] = current_features
-    st.multiselect(**multiselect_kwargs)
-
-    # --------------------------------------------------------------------------
-    # 4.2 Target Selectbox
-    # --------------------------------------------------------------------------
-    # Target options exclude selected features
-    target_options = [
-        col for col in available_cols
-        if col not in st.session_state.selected_features
-    ]
-
-    # Determine desired target: session_state → config → fallback to last column
     desired_target_name = st.session_state.selected_targets
     if desired_target_name is None:
         desired_target_name = vars_cfg.get("output_names", None)
     if desired_target_name is None and available_cols:
         desired_target_name = available_cols[-1]
 
-    # Safe index computation
     if target_options:
         if desired_target_name in target_options:
             default_target_index = target_options.index(desired_target_name)
@@ -426,36 +384,66 @@ if st.session_state.available_columns:
         default_target_index = 0
 
     st.selectbox(
-        "Select target column (Y)",
+        "Target column (Y)",
         options=target_options,
         index=default_target_index,
-        key="selected_targets",  # stored in session_state
+        key="selected_targets",
     )
 
-    st.markdown("---")
-
-    # --------------------------------------------------------------------------
-    # 4.3 Sync into current_ui_config + advanced textareas + SAVE TO YAML
-    # --------------------------------------------------------------------------
-    # Features → newline-separated string
-    feature_list = st.session_state.get("selected_features", [])
-    feature_string = "\n".join(feature_list)
-    vars_cfg["input_names"] = feature_string
-
-    # Target
     target_value = st.session_state.get("selected_targets", "")
     if target_value == "(No Target Available)":
         target_string = ""
     else:
         target_string = str(target_value) if target_value else ""
     vars_cfg["output_names"] = target_string
+    if not target_string:
+        vars_cfg["input_names"] = ""
 
-    # These are used by config_ui.py (advanced textareas)
-    st.session_state["input_vars_advanced"] = feature_string
-    st.session_state["output_vars_global"] = target_string
+    # --------------------------------------------------------------------------
+    # 4.2 Feature Multiselect (shown after target is chosen)
+    if target_string:
+        # Auto-populate once per target selection; allow clearing thereafter
+        last_auto = st.session_state.get("last_auto_features_target")
+        if not st.session_state.get("selected_features") and last_auto != target_string:
+            st.session_state.selected_features = [
+                c for c in available_cols if c != target_string
+            ]
+            st.session_state["last_auto_features_target"] = target_string
 
-    # Persist to config.yaml on every change
-    save_config(st.session_state.current_ui_config, CONFIG_PATH)
+        # Keep only features that still exist in the uploaded file
+        current_features = [
+            f for f in st.session_state.selected_features
+            if f in available_cols and f != target_string
+        ]
+
+        # If nothing selected yet, default to all columns except the target
+        if not current_features and available_cols:
+            current_features = [c for c in available_cols if c != target_string]
+
+        # Avoid Streamlit warning: only provide default when widget key is unset
+        multiselect_kwargs = {
+            "label": "Feature columns (X)",
+            "options": [c for c in available_cols if c != target_string],
+            "key": "selected_features",
+        }
+        if "selected_features" not in st.session_state:
+            multiselect_kwargs["default"] = current_features
+        st.multiselect(**multiselect_kwargs)
+
+        feature_list = st.session_state.get("selected_features", [])
+        feature_string = "\n".join(feature_list)
+        vars_cfg["input_names"] = feature_string
+
+    st.markdown("---")
+    if target_string:
+        # These are used by config_ui.py (advanced textareas)
+        feature_list = st.session_state.get("selected_features", [])
+        feature_string = "\n".join(feature_list)
+        st.session_state["input_vars_advanced"] = feature_string
+        st.session_state["output_vars_global"] = target_string
+
+        # Persist to config.yaml on every change
+        save_config(st.session_state.current_ui_config, CONFIG_PATH)
 
 
 # ----------------------------------------------------------------------------------
@@ -506,7 +494,7 @@ render_control_panel()
 # ----------------------------------------------------------------------------------
 # 8. Final Results Section + Completed Archives
 # ----------------------------------------------------------------------------------
-swallow_typeerror(render_final_results)
+render_final_results()
 
 # Completed runs explorer
 def list_completed_runs(base_dir="runs"):

@@ -110,7 +110,17 @@ def handle_run_pipeline(is_resume: bool):
         return
 
     # 3. Initialize Dataset objects (train + test)
-    dataset_train, dataset_test = initialize_training_dataset(train_path, test_path)
+    try:
+        dataset_train, dataset_test = initialize_training_dataset(train_path, test_path)
+        st.session_state.pop("last_run_error", None)
+    except ValueError as e:
+        msg = (
+            "No input features were selected. Please choose at least one feature column "
+            "in the **Select Input and Output Columns** section, then start again."
+        )
+        st.session_state["last_run_error"] = msg
+        st.error(msg)
+        return
     st.session_state.dataset_input_vars = dataset_train.input_vars
     train_filename = persistent_train_file.name if persistent_train_file else None
     test_filename = persistent_test_file.name if persistent_test_file else None
@@ -253,6 +263,13 @@ def render_control_panel():
     
     with col1:
         st.header("Training Control")
+
+        # Persisted error messages (e.g., missing feature selection)
+        if st.session_state.get("last_run_error") and st.session_state.get("selected_features"):
+            st.session_state.pop("last_run_error", None)
+        last_error = st.session_state.get("last_run_error")
+        if last_error:
+            st.error(last_error)
 
         is_running = st.session_state.is_running
         is_resumable = st.session_state.get('is_resumable', False)
@@ -485,65 +502,8 @@ def render_live_status(col, best_model_exists):
                 st.metric("Best NMAE", f"{val:.4f}")
 
         # ---------------------------------------------------------------------
-        # Intermediate model download
-        # ---------------------------------------------------------------------
-        render_intermediate_download(best_model_exists)
-
-        # ---------------------------------------------------------------------
         # Best hyperparameters
         # ---------------------------------------------------------------------
         st.subheader("Best Hyperparameters")
         best_params = ss.get("best_params_so_far", {})
         st.json(best_params, expanded=False)
-
-def render_intermediate_download(best_model_exists):
-    """Renders the intermediate best model download expander."""
-    has_best_loss = st.session_state.best_loss_so_far != float("inf")
-    
-    if best_model_exists and has_best_loss:
-        try:
-            with open(st.session_state.best_model_path, "rb") as f:
-                model_data = f.read()
-            
-            if len(model_data) > 0:
-                best_onnx_path = st.session_state.get("best_onnx_path")
-                zip_path = st.session_state.get("intermediate_zip_path")
-                if not zip_path:
-                    run_dir = st.session_state.get("current_run_dir")
-                    if run_dir:
-                        candidate_zip = f"{run_dir}.zip"
-                        if os.path.exists(candidate_zip):
-                            zip_path = candidate_zip
-
-                with st.expander("Download Intermediate Model"):
-                    dl_col1, dl_col2 = st.columns(2)
-                    with dl_col1:
-                        st.download_button(
-                            label="Download best .pt model",
-                            data=model_data,
-                            file_name="best_intermediate.pt",
-                            mime="application/octet-stream"
-                        )
-                    with dl_col2:
-                        if best_onnx_path and os.path.exists(best_onnx_path):
-                            with open(best_onnx_path, "rb") as f_onnx:
-                                st.download_button(
-                                    label="Download best .onnx model",
-                                    data=f_onnx.read(),
-                                    file_name="best_intermediate.onnx",
-                                    mime="application/octet-stream"
-                                )
-                        else:
-                            st.info("ONNX for best model not available yet.")
-                    if zip_path and os.path.exists(zip_path):
-                        with open(zip_path, "rb") as f_zip:
-                            st.download_button(
-                                label="Download full run (zip)",
-                                data=f_zip.read(),
-                                file_name=os.path.basename(zip_path),
-                                mime="application/zip",
-                            )
-                    else:
-                        st.info("Run archive not available yet.")
-        except Exception:
-            pass
