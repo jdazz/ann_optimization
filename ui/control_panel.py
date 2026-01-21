@@ -379,15 +379,18 @@ def render_live_status(col, best_model_exists):
         total = ss.get("total_trials", 0) or 0
         current = ss.get("current_trial_number", 0) or 0
 
+        progress = 0.0
         if total > 0:
-            # When a run is finished, keep the bar at 100% until next start
-            if ss.get("final_model_path"):
+            finished = (
+                ss.get("final_model_path")
+                or ss.get("run_status") in ("DONE", "FAILED", "ABORTED")
+                or current >= total
+            )
+            if finished:
                 progress = 1.0
                 current = total
             else:
                 progress = min(current / total, 1.0)
-        else:
-            progress = 0.0
 
         st.progress(progress, text=f"Trials: {current} / {total}")
 

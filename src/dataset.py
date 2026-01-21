@@ -294,6 +294,7 @@ class Dataset:
                 f"Applying One-Hot Encoding to categorical inputs: "
                 f"{', '.join(categorical_cols)}."
             )
+            original_feature_count = len(input_vars_raw)
 
             self.dataset = pd.get_dummies(
                 self.dataset,
@@ -306,7 +307,12 @@ class Dataset:
             self.input_vars = [
                 col for col in self.dataset.columns if col not in self.output_vars
             ]
-            log_to_queue(f"Total input features after OHE: {len(self.input_vars)}")
+            new_feature_count = len(self.input_vars)
+            added = new_feature_count - original_feature_count
+            log_to_queue(
+                f"WARNING: ⚠️ One-Hot Encoding expanded features from "
+                f"{original_feature_count} to {new_feature_count} (+{added}).⚠️"
+            )
         else:
             self.input_vars = input_vars_raw
             log_to_queue("No categorical input features found. Skipping One-Hot Encoding.")

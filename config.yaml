@@ -49,5 +49,29 @@ targets:
   nmae_target: 0.08
   r2_target: 0.99
 variables:
-  input_names: ''
-  output_names: ''
+  input_names: 'crime_rate
+
+    residential_zone
+
+    industrial_zone
+
+    charles_river
+
+    nitric_oxide_concentration
+
+    rooms
+
+    age
+
+    distance
+
+    highway_accessibility
+
+    tax_rate
+
+    pupil_teacher_ratio
+
+    black_population
+
+    lower_status_population'
+  output_names: median_value

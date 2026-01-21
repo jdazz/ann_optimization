@@ -383,12 +383,15 @@ if st.session_state.available_columns:
         target_options = ["(No Target Available)"]
         default_target_index = 0
 
-    st.selectbox(
-        "Target column (Y)",
-        options=target_options,
-        index=default_target_index,
-        key="selected_targets",
-    )
+    selectbox_kwargs = {
+        "label": "Target column (Y)",
+        "options": target_options,
+        "key": "selected_targets",
+    }
+    # Only supply a default index when the key isn't already set to avoid Streamlit warning
+    if "selected_targets" not in st.session_state:
+        selectbox_kwargs["index"] = default_target_index
+    st.selectbox(**selectbox_kwargs)
 
     target_value = st.session_state.get("selected_targets", "")
     if target_value == "(No Target Available)":
